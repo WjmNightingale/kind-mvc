@@ -10,9 +10,9 @@
 </head>
 <body>
     <div id="app">
-
     </div>
     <script>
+        fakeData()
         function Model(options) {
             this.data = options.data
             this.resource = options.resource
@@ -25,12 +25,18 @@
             })
         }
         Model.prototype.update = function(data) {
+            console.log('model更新数据操作')
             let id = this.data.id
+            console.log('id为：'+id)
+            console.log(data)
             return axios.put(`/${this.resource}s/${id}`,data).then((response) => {
                 this.data = response.data
                 console.log('response')
                 console.log(response)
                 return response
+            },(error) => {
+                console.log('更新异常')
+                console.log(error)
             })
         }
         function View ({el,template}) {
@@ -118,6 +124,8 @@
             model: model
         })
         function fakeData() {
+            console.log('axios是否引入：')
+            console.log(axios.interceptors.response.use())
             let book = {
                 name: 'JavaScript 高级程序设计',
                 number: 2,
@@ -129,9 +137,13 @@
                         method,url,data
                     }
                 } = response
+                console.log('响应体为：')
+                console.dir(response)
                 if (url === '/books/1' && method === 'get') {
+                    console.log('第一次请求数据')
                     response.data = book
                 } else if (url === '/books/1' && method === 'put') {
+                    console.log('更新数据操作')
                     data = JSON.parse(data)
                     Object.assign(book,data)
                     response.data = book
