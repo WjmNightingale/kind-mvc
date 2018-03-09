@@ -4,175 +4,141 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>组件复用</title>
+    <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdn.bootcss.com/axios/0.17.1/axios.min.js"></script>
+    <title>JS如何写mvc</title>
 </head>
 <body>
-    <div class="wrap">
-        <div class="text">0</div>
-        <button class="plus">+</button>
+    <div id="app">
+
     </div>
     <script>
-    class Add {
-        render () {
-            return `
-            <div class="text">0</div>
-        <button class="plus">+</button>
-            `
+        function Model(options) {
+            this.data = options.data
+            this.resource = options.resource
         }
-    }
-    const wrap = document.querySelector('.wrap')
-    const add = new Add()
-    wrap.innerHTML = add.render()
-    const plus = document.querySelector('.plus')
-    const text = document.querySelector('.text')
-    let number = 0
-    plus.addEventListener('click',() => {
-        number++
-        text.innerHTML = number
-    },false)
-    </script>
-    <script>
-    class Add {
-        createWrapper(string) {
-            const wrapper = document.createElement('div')
-            wrapper.innerHTML = string
-            return wrapper
-        }
-        render() {
-            const domString = `
-            <div class="text">0</div>
-            <button class="plus">+</button>
-            `
-            const wrapper = this.createWrapper(domString)
-            const plus = wrapper.querySelector('.plus')
-            const text = wrapper.querySelector('.text')
-            let number = 0
-            plus.addEventListener('click',() => {
-                number++
-                text.innerHTML = number
-            },false)
-            return wrapper
-        }
-    }
-    const wrap = document.querySelector('.wrap')
-    const add = new Add()
-    wrap.appendChild(add.render())
-    </script>
-    <script>
-    //数据驱动组件 状态
-    //数据是什么，组件就是什么==》数据是什么，我们就展示什么
-    //也就是说，数据发生改变时，根据数据的变化，重新渲染组件
-    class Add {
-        constructor() {
-            //构造函数，设置state
-            this.state = {
-                number: 0
-            }
-        }
-        //setState,每次调用setState方法时，就会重新渲染，更新组件
-        setState(NewState) {
-            const oldElement = this.wrapper
-            this.state = {...NewState}//ES6展开操作符
-            this.wrapper = this.render()//数据改变后重新渲染
-            //拿到新组件后，更新原来的组件
-            if (this.update) {
-                this.update(oldElement,this.wrapper)
-            }
-        }
-        createWrapper(string) {
-            const wrapper = document.createElement('div')
-            wrapper.innerHTML = string
-            return wrapper
-        }
-        onClick() {
-            let NewState = this.state.number + 1
-            this.setState({
-                number: NewState
+        Model.prototype.fetch = function(id) {
+            return axios.get(`/${this.resource}s/${id}`).then((response) => {
+                this.data = response.data
+                console.log(this.data)
+                return response
             })
         }
-        render() {
-            const domString = `
-            <div class="text_1">${this.state.number}</div>
-            <div class="text_2">${this.state.number}</div>
-            <div class="text_3">${this.state.number}</div>
-            <button class="plus">+</button>
-            `
-            this.wrapper = this.createWrapper(domString)
-            const plus = this.wrapper.querySelector('.plus')
-            plus.addEventListener('click',this.onClick.bind(this),false)
-            return this.wrapper
-        }
-    }
-    const wrap = document.querySelector('.wrap')
-    const add = new Add()
-    wrap.appendChild(add.render())
-    wrap.update = (old,next) => {
-        wrap.insertBefore(next,old)
-        wrap.removeChild(old)
-    }    
-    </script>
-    <script>
-    //进阶，让所有组件拥有自动更新的能力（数据绑定？）
-    //方式：根据组件状态，将组件自动更新的能力抽取出来
-    class ButtonComponent {
-        constructor () {
-
-        }
-        createWrapper(string) {
-            const wrapper = document.createElement('div')
-            wrapper.innerHTML = string
-            return wrapper
-        }
-        setState(NewState) {
-            const oldElement = this.wrapper
-            this.state = {...NewState}
-            this.wrapper = this.renderElement()
-            if (this.update) {
-                this.update(oldElement,this.wrapper)
-            }
-        }
-        renderElement() {
-            this.wrapper = this.createWrapper(this.render())
-            const plus = this.wrapper.querySelector('.plus')
-            if (this.onClick) {
-                plus.addEventListener('click',this.onClick.bind(this),false)
-            }
-            return this.wrapper
-        }
-        render () {
-            //返回一个模板字符串
-        }
-    }
-    const renderToDOM = (component,DOMElement) => {
-        DOMElement.appendChild(component.renderElement())
-        component.update = (old,next) => {
-            DOMElement.insertBefore(old,next)
-            DOMElement.removeChild(old)
-        }
-    }
-    class Add extends ButtonComponent {
-        constructor() {
-            super()
-            this.state = {
-                number: 0
-            }
-        }
-        onClick() {
-            let NewState = this.state.number + 1
-            this.setState({
-                number: NewState
+        Model.prototype.update = function(data) {
+            let id = this.data.id
+            return axios.put(`/${this.resource}s/${id}`,data).then((response) => {
+                this.data = response.data
+                console.log('response')
+                console.log(response)
+                return response
             })
         }
-        render() {
-            return `
-            <div class="text_1">${this.state.number}</div>
-            <div class="text_2">${this.state.number}</div>
-            <div class="text_3">${this.state.number}</div>
-            <button class="plus">+</button>
-            `
+        function View ({el,template}) {
+            this.el = el
+            this.template = template
         }
-    }
-    renderToDOM(new Add,document.getElementById('wrap'))
+        View.prototype.render = function(data) {
+            let html = this.template
+            for (let key in data) {
+                html = html.replace(`__${key}__`,data[key])
+            }
+            $(this.el).html(html)
+        }
+        //-----MVC类构建完毕，下面开始是对象
+        let model = new Model({
+            data: {
+                name: '',
+                number: 0,
+                id: ''
+            },
+            resource: 'book'
+        })
+        let view = new View({
+            el: '#app',
+            template: `
+            <div>
+            书名：《__name__》
+            数量：<span id="number">__number__</span>
+            </div>
+            <div>
+            <button id="addOne">加1</button>
+            <button id="minusOne">减1</button>
+            <button id="reset">归零</button>
+            </div>
+            `
+        })
+        var controller = {
+            init(options) {
+                let view = options.view
+                let model = options.model
+                this.view = view
+                this.model = model
+                this.view.render(this.model.data)
+                this.bindEvents()
+                this.model.fetch(1).then(() => {
+                    console.log('this.model.data')
+                    console.log(this.model.data)
+                    this.view.render(this.model.data)
+                })
+            },
+            addOne() {
+                var oldNumber = $('#number').text()//string
+                var newNumber = oldNumber - 0 + 1
+                this.model.update({
+                    number: newNumber
+                }).then(() => {
+                    this.view.render(this.model.data)
+                })
+            },
+            minusOne() {
+                var oldNumber = $('#number').text()//string
+                var newNumber = oldNumber - 0 - 1
+                this.model.update({
+                    number: newNumber
+                }).then(() => {
+                    this.view.render(this.model.data)
+                })
+            },
+            reset() {
+                var oldNumber = $('#number').text()//string
+                this.model.update({
+                    number: 0
+                }).then(() => {
+                    this.view.render(this.model.data)
+                })
+            },
+            bindEvents() {
+                $(this.view.el).on('click','#addOne',this.addOne.bind(this))
+                $(this.view.el).on('click','#minusOne',this.minusOne.bind(this))
+                $(this.view.el).on('click','#reset',this.reset.bind(this))
+            }
+        }
+        controller.init({
+            view: view,
+            model: model
+        })
+        function fakeData() {
+            let book = {
+                name: 'JavaScript 高级程序设计',
+                number: 2,
+                id: 1
+            }
+            axios.interceptors.response.use(function(response) {
+                let {
+                    config: {
+                        method,url,data
+                    }
+                } = response
+                if (url === '/books/1' && method === 'get') {
+                    response.data = book
+                } else if (url === '/books/1' && method === 'put') {
+                    data = JSON.parse(data)
+                    Object.assign(book,data)
+                    response.data = book
+                }
+                return response
+            })
+        }
     </script>
 </body>
 </html>
