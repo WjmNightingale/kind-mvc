@@ -1,17 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>组件复用</title>
 </head>
+
 <body>
-    <div class="wrap">
-        <div class="text">0</div>
-        <button class="plus">+</button>
+    <div class="wrap" id="wrap">
+        <!-- <div class="text">0</div>
+        <button class="plus">+</button> -->
     </div>
-    <script>
+
+    <!-- <script>
     class Add {
         render () {
             return `
@@ -30,8 +33,10 @@
         number++
         text.innerHTML = number
     },false)
-    </script>
-    <script>
+    </script> -->
+
+
+    <!-- <script>
     class Add {
         createWrapper(string) {
             const wrapper = document.createElement('div')
@@ -57,8 +62,12 @@
     const wrap = document.querySelector('.wrap')
     const add = new Add()
     wrap.appendChild(add.render())
-    </script>
-    <script>
+    </script> -->
+
+
+
+
+    <!-- <script>
     //数据驱动组件 状态
     //数据是什么，组件就是什么==》数据是什么，我们就展示什么
     //也就是说，数据发生改变时，根据数据的变化，重新渲染组件
@@ -110,69 +119,80 @@
         wrap.insertBefore(next,old)
         wrap.removeChild(old)
     }    
-    </script>
-    <script>
-    //进阶，让所有组件拥有自动更新的能力（数据绑定？）
-    //方式：根据组件状态，将组件自动更新的能力抽取出来
-    class ButtonComponent {
-        constructor () {
+    </script> -->
 
-        }
-        createWrapper(string) {
-            const wrapper = document.createElement('div')
-            wrapper.innerHTML = string
-            return wrapper
-        }
-        setState(NewState) {
-            const oldElement = this.wrapper
-            this.state = {...NewState}
-            this.wrapper = this.renderElement()
-            if (this.update) {
-                this.update(oldElement,this.wrapper)
+
+
+    <script>
+        //进阶，让所有组件拥有自动更新的能力（数据绑定？）
+        //方式：根据组件状态，将组件自动更新的能力抽取出来
+        class ButtonComponent {
+            constructor() {
+                console.log('这是类的构造函数')
+            }
+            createWrapper(string) {
+                const wrapper = document.createElement('div')
+                wrapper.innerHTML = string
+                return wrapper
+            }
+            setState(NewState) {
+                const oldElement = this.wrapper
+                console.log('oldElement-->')
+                console.log(oldElement)
+                this.state = { ...NewState
+                }
+                this.wrapper = this.renderElement()
+                console.log('newElement-->')
+                console.log(this.wrapper)
+                if (this.update) {
+                    this.update(this.wrapper,oldElement)
+                }
+            }
+            renderElement() {
+                this.wrapper = this.createWrapper(this.render())
+                const plus = this.wrapper.querySelector('.plus')
+                if (this.onClick) {
+                    plus.addEventListener('click', this.onClick.bind(this), false)
+                }
+                return this.wrapper
+            }
+            render() {
+                //返回一个模板字符串
             }
         }
-        renderElement() {
-            this.wrapper = this.createWrapper(this.render())
-            const plus = this.wrapper.querySelector('.plus')
-            if (this.onClick) {
-                plus.addEventListener('click',this.onClick.bind(this),false)
+        class Add extends ButtonComponent {
+            constructor() {
+                super()
+                this.state = {
+                    number: 0
+                }
             }
-            return this.wrapper
-        }
-        render () {
-            //返回一个模板字符串
-        }
-    }
-    const renderToDOM = (component,DOMElement) => {
-        DOMElement.appendChild(component.renderElement())
-        component.update = (old,next) => {
-            DOMElement.insertBefore(old,next)
-            DOMElement.removeChild(old)
-        }
-    }
-    class Add extends ButtonComponent {
-        constructor() {
-            super()
-            this.state = {
-                number: 0
+            onClick() {
+                let NewState = this.state.number + 1
+                this.setState({
+                    number: NewState
+                })
             }
-        }
-        onClick() {
-            let NewState = this.state.number + 1
-            this.setState({
-                number: NewState
-            })
-        }
-        render() {
-            return `
+            render() {
+                return `
             <div class="text_1">${this.state.number}</div>
             <div class="text_2">${this.state.number}</div>
             <div class="text_3">${this.state.number}</div>
             <button class="plus">+</button>
             `
+            }
         }
-    }
-    renderToDOM(new Add,document.getElementById('wrap'))
+
+        function renderToDOM(component, DOMElement) {
+            DOMElement.appendChild(component.renderElement())
+            console.log(DOMElement)
+            component.update = (newRender,oldRender) => {
+                DOMElement.insertBefore(newRender, oldRender)
+                DOMElement.removeChild(oldRender)
+            }
+        }
+        renderToDOM(new Add, document.getElementById('wrap'))
     </script>
 </body>
+
 </html>
