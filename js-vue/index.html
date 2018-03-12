@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Vue的mvc</title>
+    <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdn.bootcss.com/axios/0.17.1/axios.min.js"></script>
+    <script src="https://cdn.bootcss.com/vue/2.5.13/vue.min.js"></script>
+    <link rel="stylesheet" href="./style.css">
+</head>
+
+<body>
+    <div id="app"></div>
+    <script>
+        let view = new Vue({
+            el: '#app',
+            data: {
+                books: {
+                    name: '未命名',
+                    number: 0,
+                    id: ''
+                },
+                n: 1
+            },
+            template: `
+                <div>
+                    <div>
+                      书名：《{{book.name}}》
+                      数量：<span id=number>{{book.number}}</span>
+                    </div>
+                    <div>
+                      <input v-model="n" />
+                      N 的值是 {{n}}
+                    </div>
+                    <div>
+                      <button v-on:click="addOne">加N</button>
+                      <button v-on:click="minusOne">减N</button>
+                      <button v-on:click="reset">归零</button>
+                    </div>
+                </div>
+            `,
+            created() {
+                model.fetch(1).then(() => {
+                    this.book = model.data
+                })
+            },
+            methods: {
+                addOne() {
+                    model.update({
+                        number: this.book.number + (this.n-0)
+                    }).then(() => {
+                        this.view.book = this.model.data
+                    })
+                },
+                reset() {
+                    model.update({
+                        number: 0
+                    }).then(() => {
+                        this.view.book = this.model.data
+                    })
+                }
+            }
+        })
+        function fakeData() {
+            let book = {
+                name: 'Javascript高级程序设计',
+                number: 2,
+                id: 1
+            }
+            axios.interceptors.response.use(function(response) {
+                let {
+                    config: {
+                        method,url,data
+                    } = response
+                }
+                if (url === '/books/1' && method === 'get') {
+                    response.data = book
+                } else if (url === '/books/1' && method ==='put') {
+                    data = JSON.parse(data)
+                    Object.assign(book,data)
+                    response.data = book
+                }
+                return response
+            })
+        }
+
+
+       
+        //引入组件
+
+    </script>
+</body>
+
+</html>

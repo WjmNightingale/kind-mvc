@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Vue测试</title>
+    <script src="https://cdn.bootcss.com/axios/0.17.1/axios.min.js"></script>
+    <script src="https://cdn.bootcss.com/vue/2.5.13/vue.min.js"></script>
+</head>
+
+<body>
+    <div id="app">
+        <ol>
+            <todo-item v-for="item in test2" v-bind:my="item" v-bind:key="item.id">
+            </todo-item>
+        </ol>
+    </div>
+    <script>
+        //v-bind: my 用来载入数据 这里的my即是props中定义的某个prop
+
+        //先注册组件阶段
+        Vue.component('todo-item', { // 'todo-item'为自定义的组件名
+            props: ['my'], //父子组件通信时，数据传递由props完成,'todo'表示要传递的数据的标识
+            template: '<li>{{my.text}}</li>'
+        })
+
+        //先注册组件,再实例化vue对象，不然组件上的数据无法加载
+        var app = new Vue({
+            el: '#app',
+            data: {
+                test1: [{
+                        id: 0,
+                        text: '蔬菜'
+                    },
+                    {
+                        id: 1,
+                        text: '水果'
+                    },
+                    {
+                        id: 2,
+                        text: '或萝卜'
+                    }
+                ],
+                test2: [{
+                        id: 3,
+                        text: '我是测试数据2'
+                    },
+                    {
+                        id: 5,
+                        text: '测试测试'
+                    }
+                ],
+                test3: {
+                    id: 4,
+                    text: '我是测试数据3'
+                }
+            }
+        })
+    </script>
+</body>
+
+</html>
