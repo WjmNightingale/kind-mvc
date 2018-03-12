@@ -6,15 +6,37 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Vue测试</title>
-    <script src="https://cdn.bootcss.com/axios/0.17.1/axios.min.js"></script>
+    <!-- <script src="https://cdn.bootcss.com/axios/0.17.1/axios.min.js"></script> -->
     <script src="https://cdn.bootcss.com/vue/2.5.13/vue.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios@0.12.0/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lodash@4.13.1/lodash.min.js"></script>
 </head>
 
 <body>
     <div id="app">
+        <div class="testAjax">
+            <p>Ask a yes/no question
+                <input v-model="question">
+            </p>
+            <p>{{answer}}</p>
+        </div>
+        fullName:{{fullName}}
+        <button v-on:click="modifyFirst">firstName</button>
+        <button v-on:click="modifyLast">lastName</button>
         <ol>
+            <h1 v-if="isSeen">这是大标题</h1>
+            <p>Origin：{{message}}</p>
+            p
+            <p>Computed: {{computedReverseMessage}}</p>
+            <h2 v-bind:id="dynamicId"></h2>
+            <button v-bind:disabled="isButtonDisabled">测试disabled属性是否存在</button>
+            <button v-on:click="reverseMessage">点击一下反转message</button>
             <todo-item v-for="item in test2" v-bind:my="item" v-bind:key="item.id">
             </todo-item>
+            <p>Using v-html directive:
+                <span v-html="rawHtml"></span>
+            </p>
+
         </ol>
     </div>
     <script>
@@ -30,6 +52,15 @@
         var app = new Vue({
             el: '#app',
             data: {
+                question: '',
+                answer: 'I cannot give you an answer until you ask a question!',
+                isSeen: true,
+                message: 'this is test',
+                dynamicId: 'isH2',
+                isButtonDisabled: true,
+                rawHtml: `<span style="color:red">red</span>`,
+                firstName: 'wjm123',
+                lastName: '321mjw',
                 test1: [{
                         id: 0,
                         text: '蔬菜'
@@ -56,6 +87,61 @@
                     id: 4,
                     text: '我是测试数据3'
                 }
+            },
+            computed: {
+                fullName: {
+                    //计算属性的getter属性
+                    get: function () {
+                        console.log('get--')
+                        return (this.firstName + '--' + this.lastName)
+                    },
+                    //计算属性的setter属性
+                    set: function (val) {
+                        console.log('set---')
+                        console.log(val)
+                        val = val.split('').join('*')
+                        this.firstName = val + '=>first'
+                        this.lastName = val + '=>last'
+                    }
+                },
+                computedReverseMessage: function () {
+                    // `this`指向vm实例
+                    return this.message.split('').reverse().join(',')
+                }
+            },
+            methods: {
+                reverseMessage: function () {
+                    this.isSeen = !this.isSeen
+                    this.message = this.message.split('').reverse().join('')
+                },
+                modifyFirst: function () {
+                    this.firstName = 'wjm1'
+                    console.log(this.firstName)
+                },
+                modifyLast: function () {
+                    this.lastName = 'wjm2'
+                    console.log(this.lastName)
+                },
+                getAnswer: _.debounce(function() {
+                    if (this.question.indexOf('?' === -1)) {
+                        this.answer = 'Questions usually contain a question mark. ;-)'
+                        return
+                    }
+                    this.answer = 'Thinking...'
+                    var self = this
+                    axios.get('https://yesno.wtf/api')
+                         .then(function(response) {
+                             self.answer = _.capitalize(response.data.answer)
+                         }).catch(function(error) {
+                             self.answer = 'Error! Could not reach the API. ' + error 
+                         })
+                },500)
+            },
+            watch: {
+               question: function(newQuestion,oldQuestion) {
+                   this.answer = 'Waiting for you to stop typing...'
+                   this.getAnswer()
+               }
             }
         })
     </script>
