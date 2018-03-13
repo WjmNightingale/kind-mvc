@@ -203,6 +203,7 @@ var vm = new Vue({
     }
 })
 ```
+
 上面代码是命令式且重复的。将它与计算属性的版本进行比较：
 
 ```js
@@ -244,3 +245,40 @@ computed: {
 
 虽然通过之前的一个例子知道，在大部分情况下，能够缓存的计算属性相比侦听器是更合适的，但如果需要在数据变化时执行异步操作或者开销较大的操作时，给属性通过`watch`增添一个监听器则是更好的选择
 
+```html
+<div id="watch-demo">
+<p>
+Ask a yes/no question:
+<input v-model="question">
+</p>
+<p>{{answer}}</p>
+</div>
+```
+
+```js
+<script src="https://cdn.jsdelivr.net/npm/axios@0.12.0/dist/axios.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lodash@4.13.1/lodash.min.js"></script>
+var watch = new Vue({
+    el: 'watch-demo',
+    data: {
+        question: '',
+        answer: 'I cannot give you an answer until you ask a question!'
+    },
+    watch: {
+        //如果'question'发生改变,这个函数就会运行
+        question: function(newQuestion,oldQuestion) {
+            this.answer = 'Waiting for you to stop typing...'
+            this.getAnswer()
+        }
+    },
+    methods: {
+        getAnswer: _.debounce(
+            function() {
+                if(this.question.indexOf('?' === -1) {
+                    this.answer = 'Questions usually contain a question mark.'
+                })
+            }
+        )
+    }
+})
+```

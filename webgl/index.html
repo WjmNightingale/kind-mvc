@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Three.js</title>
+    <script src="https://cdn.bootcss.com/three.js/90/three.js"></script>
+    <style>
+        #world {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: linear-gradient(#e4e0ba, #f7d9aa);
+        }
+    </style>
+</head>
+
+<body>
+    <div id="world">
+    </div>
+    <script>
+        const colors = {
+            red: 0xf25346,
+            white: 0xd8d0d1,
+            brown: 0x59332e,
+            pink: 0xF5986E,
+            brownDark: 0x23190f,
+            blue: 0x68c3c0
+        }
+        // var three = new THREE.Scene()
+        // console.log('scene====>')
+        // console.dir(three)
+        window.addEventListener('load', init, false)
+
+        function init() {
+            //创建场景、相机、渲染器
+            createScene()
+            //添加光源
+            createLights()
+            //添加对象
+            createPlane()
+            createSea()
+            createSky()
+            //调用循环函数，在每帧更新对象的位置和渲染场景
+            loop()
+        }
+
+        function createScene() {
+            var scene, camera, filedOfviews, aspectRatio, nearPlane, farPlane, HEIGHT, WIDTH, renderer, container
+            //获取屏幕宽高，用它们设置相机纵横比，还有渲染器大小
+            HEIGHT = window.innerHeight
+            WIDTH = window.innerWidth
+
+            //创建场景
+            scene = new THREE.Scene()
+
+            //添加雾的效果,颜色和背景一样的颜色
+            scene.fog = new THREE.Fog(0xf7d9aa, 100, 950)
+
+            //创建相机
+
+            //   @param PerspectiveCamera 透视相机
+            //   @param fieldOfView 视角
+            //   @param aspectRatio 纵横比
+            //   @param nearPlane 近平面
+            //   @param farPlane 远平面
+
+            aspectRatio = WIDTH / HEIGHT
+            filedOfviews = 60
+            nearPlane = 1
+            farPlane = 10000
+
+            camera = new THREE.PerspectiveCamera(
+                filedOfviews,
+                aspectRatio,
+                nearPlane,
+                farPlane
+            )
+
+            //设置相机位置
+            camera.position.x = 0
+            camera.position.y = 100
+            camera.position.z = 200
+
+            //创建渲染器
+            renderer = new THREE.WebGLRenderer({
+                //设置渐变色
+                alpha: true,
+                //开启抗拒齿
+                antialias: true
+            })
+            //定义渲染器大小
+            renderer.setSize(WIDTH, HEIGHT)
+            //开启渲染器阴影地图
+            renderer.shadowMap.enabled = true
+
+            //在html创建的容器中添加渲染器的DOM元素
+            container = document.getElementById('world')
+            container.appendChild(renderer.domElement)
+
+            //监听屏幕，缩放屏幕更新相机和渲染器尺寸
+            window.addEventListener('resize', handleWindowResize, false)
+
+            
+        }
+
+        function handleWindowResize() {
+            HEIGHT = window.innerHeight
+            WIDTH = window.innerWidth
+            renderer.setSize(WIDTH, HEIGHT)
+            camera.aspect = WIDTH / HEIGHT
+            camera.updateProjectionMatrix()
+        }
+
+        function createLights() {
+            var hemisphereLight, shadowLight
+            //hemisphereLight 半球光 ==》渐变光
+            //param1:天空颜色 param2：地面颜色 param3：光源强度
+            hemisphereLight = new THREE.HemisphereLight(0xaaaaaa, 0x000000, .9)
+
+            //shadowLight ==> 方向光 ==》 类似太阳
+            //param1: 关系颜色 param2: 光源强度
+            shadowLight = new THREE.DirectionalLight(0xffffff, .9)
+
+            //设置光源位置
+            //位置不同，方向作用于物体的面也不同，看到的颜色也不同
+            shadowLight.position.set(150, 350, 350)
+            //开启光源投影
+            shadowLight.castShadow = true
+
+            //定义可见域的投射阴影：
+            shadowLight.shadow.camera.left = -400
+            shadowLight.shadow.camera.right = 400
+            shadowLight.shadow.camera.top = 400
+            shadowLight.shadow.camera.bottom = -400
+            shadowLight.shadow.camera.near = 1
+            shadowLight.shadow.camera.far = 1000
+
+            //定义阴影的分辨率，虽然分辨率越高越好，但是需要付出更加昂贵的代价维持高性能的表现
+            shadowLight.shadow.mapSize.width = 2048
+            shadowLight.shadow.mapSize.height = 2048
+
+            //将光源添加到场景中
+            scene.add(hemisphereLight)
+            scene.add(shadowLight)
+
+            // 正如你所见，创建光源用到许多参数。
+            // 不要再犹豫，大胆尝试用不同的颜色，强度的光源。
+            // 你发现不同的光源在场景中能够营造有趣的氛围和环境。
+            // 而且你会找到感觉：如何按照你的需求优化它们。
+        }
+
+        function createSea() {
+            function Sea() {
+                //创建一个圆柱几何体
+                //params:顶面半径，底面半径，高度，半径分段，高度分段
+                var geom = new THREE.CylinderGeometry(600, 600, 800, 40, 10)
+                //在x轴旋转几何体
+                geom.applyMatrix(new THREE.Matrix4().makeRotationX(-Math.PI / 2))
+                //创建材质
+                var mat = new THREE.MeshPhongMaterial({
+                    color: colors.blue,
+                    transparent: true,
+                    opacity: 0.6,
+                    shading: THREE.FlatShading
+                })
+                //为了在Three.js创建一个物体,我们必须创建网格用来组合几何体和一些材质
+                this.mesh = new THREE.Mesh(geom, mat)
+                //允许大海这个对象接受阴影
+                this.mesh.receiveShadow = true
+            }
+            //创建大海的一个实例化对象
+            var sea = new Sea()
+            //设置位置
+            sea.mesh.position.y = -600
+            //添加大海的网格场景
+            scene.add(sea.mesh)
+
+            //通过以上创建大海的过程，总结创建对象需要什么步骤
+            //创建几何体=》创建材质=》将它们传入网格=》将网格添加至场景
+            //通过以上四步，我们便可以制作不同的几何体，组合起来，就成为更复杂的形状
+        }
+
+        //接下来制作云,通过组合正方体得到
+        function createSky() {
+            function Cloud() {
+                //创建一个空的容器放置不同形状的云
+                this.mesh = new THREE.Object3D()
+                //创建一个正方体,这个形状会被复制创建云
+                var geom = new THREE.BoxGeometry(20, 20, 20)
+                //创建材质，白色即可
+                var mat = new THREE.MeshPhongMaterial({
+                    color: colors.white
+                })
+
+                //随机多次复制几何体
+                var nBlocs = 3 + Math.floor(Math.random() * 3)
+                for (let i = 0; i < nBlocs; i++) {
+                    //通过复制几何体创建网格
+                    var m = new THREE.Mesh(geom, mat)
+                    //随机设置每个正方体的位置和旋转角度
+                    m.position.x = i * 15
+                    m.position.y = Math.random() * 10
+                    m.position.z = Math.random() * 10
+                    m.rotation.z = Math.random() * Math.PI * 2
+                    m.rotation.y = Math.random() * Math.PI * 2
+                    //随即设置正方体的大小
+                    var s = .1 + Math.random() * .9
+                    m.scale.set(s, s, s)
+                    //允许每个正方体生成投影和吸收阴影
+                    m.castShadow = true
+                    m.receiveShadow = true
+                    //将正方体添加至开始时我们创建的各个容器中
+                    this.mesh.add(m)
+                }
+                //colud = new Cloud()=》一朵云生成
+            }
+
+            function Sky() {
+                //创建一个空容器
+                this.mesh = new THREE.Object3D()
+                //选取若干朵云放置
+                this.nClouds = 20
+                //把云均匀散开，我们需要根据统一的角度放置它们
+                var stepAngle = Math.PI * 2 / this.nClouds
+                //创建云
+                for (let i = 0; i < this.nClouds; i++) {
+                    var c = new Cloud()
+                    //设置每朵云的旋转角度和位置
+                    //因此我们使用了一点三角函数
+                    var a = stepAngle * i //云最终的角度
+                    var h = 750 + Math.random() * 200 //轴心到云本身的距离
+                    // 三角函数！！！希望你还记得数学学过的东西 :)
+                    // 假如你不记得:
+                    // 我们简单地把极坐标转换成笛卡坐标
+                    c.mesh.position.y = Math.sin(a) * h
+                    c.mesh.position.x = Math.cos(a) * h
+                    //根据云的位置旋转它
+                    c.mesh.rotation.z = a + Math.PI / 2
+                    // 为了有更好的效果，我们把云放置在场景中的随机深度位置
+                    c.mesh.position.z = -400 - Math.random() * 400
+                    //我们再为每一朵云设置一个大小
+                    var s = 1 + Math.random() * z
+                    c.mesh.scale.set(s, s, s)
+                    this.mesh.add(c.mesh)
+                }
+                var sky = new Sky()
+                sky.mesh.position.y = -600
+                scene.add(sky.mesh)
+            }
+        }
+        //创建飞机模型
+        function createPlane() {
+            function AirPlane() {
+                this.mesh = new THREE.Object3D()
+                //创建机舱
+                var geomCockpit = new THREE.BoxGeometry(60, 50, 50, 1, 1, 1)
+                var matCockpit = new THREE.MeshPhongMaterial({
+                    color: colors.red,
+                    shading: THREE.FlatShading
+                })
+                var cockpit = new THREE.Mesh(geomCockpit, matCockpit)
+                cockpit.castShadow = true
+                cockpit.receiveShadow = true
+                this.mesh.add(cockpit)
+
+                //创建引擎
+                var geomEngine = new THREE.BoxGeometry(20, 50, 50, 1, 1, 1)
+                var matEngine = new THREE.MeshPhongMaterial({
+                    color: colors.white,
+                    shading: THREE.FlatShading
+                })
+                var engine = new THREE.Mesh(geomEngine, matEngine)
+                engine.position.x = 40
+                engine.castShadow = true
+                engine.receiveShadow = true
+                this.mesh.add(engine)
+
+                //创建机尾
+                var geomTailPlane = new THREE.BoxGeometry(15, 20, 5, 1, 1, 1)
+                var matTaiPlane = new THREE.MeshPhongMaterial({
+                    color: colors.red,
+                    shading: THREE.FlatShading
+                })
+                var tailPalne = new THREE.Mesh(geomTailPlane, matTaiPlane)
+                tailPalne.position.set(-35, 25, 0)
+                tailPalne.castShadow = true
+                tailPalne.receiveShadow = true
+                this.mesh.add(tailPalne)
+
+                //创建机翼
+                var geomSideWing = new THREE.BoxGeometry(40, 8, 150, 1, 1, 1)
+                var matSideWind = new THREE.MeshPhongMaterial({
+                    color: colors.red,
+                    shading: THREE.FlatShading
+                })
+                var sideWing = new THREE.Mesh(geomSideWing, matSideWing)
+                sideWing.castShadow = true
+                sideWing.receiveShadow = true
+                this.mesh.add(sideWing)
+
+                //创建螺旋桨
+                var geomPropeller = new THREE.BoxGeometry(20, 10, 10, 1, 1, 1)
+                var matPropeller = new THREE.MeshPhongMaterial({
+                    color: Colors.brown,
+                    shading: THREE.FlatShading
+                })
+                this.propeller = new THREE.Mesh(geomPropeller, matPropeller)
+                this.propeller.castShadow = true
+                this.propeller.receiveShadow = true
+
+                // 创建螺旋桨的桨叶
+                var geomBlade = new THREE.BoxGeometry(1, 100, 20, 1, 1, 1)
+                var matBlade = new THREE.MeshPhongMaterial({
+                    color: Colors.brownDark,
+                    shading: THREE.FlatShading
+                })
+                var blade = new THREE.Mesh(geomBlade, matBlade)
+                blade.position.set(8, 0, 0)
+                blade.castShadow = true
+                blade.receiveShadow = true
+                this.propeller.add(blade)
+                this.propeller.position.set(50, 0, 0)
+                this.mesh.add(this.propeller)
+            }
+            var airplane = new AirPlane()
+            airplane.mesh.scale.set(.25,.25,.25)
+            airplane.mesh.position.y = 100
+            scene.add(airplane.mesh)
+        }
+        function loop() {
+            //
+            //渲染场景
+            renderer.render(scene,camera)
+
+        }
+    </script>
+</body>
+
+</html>
