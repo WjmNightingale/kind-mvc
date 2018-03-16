@@ -282,3 +282,170 @@ var watch = new Vue({
     }
 })
 ```
+
+## Class绑定
+
+操作元素的class列表和内联样式是数据绑定的一个常见需求，因为它们都是属性，所以我们可以用`v-bind`处理它们，只需要通过表达式计算出字符串结果即可，不过字符串拼接麻烦而且容易出错。因此在将`v-bind`作用于class和style时，Vue.js做了专门的增强，表达式的结果类型除了字符串以外，还可以是数组和对象。
+
+### 对象语法
+
+可以传给`v-bind:class`一个对象，用以动态地切换class:`<div v-bind:class="{active:isActive}"></div>`。当`isActive`为真时，div的class便是`<div class="active"></div>`
+
+除此之外，还可以在对象中传入更多的属性来动态地切换class，甚至`v-bind:class`还可以与普通的class属性共存
+
+```html
+<div class="static" v-bind:class="{active:isActive,''text-danger':hasError}"></div>
+```
+
+```js
+data: {
+    isActive: true,
+    hasError: false
+}
+```
+
+以上结果渲染为：`<div class="static active">`。如果`hasError`为`true`的话，那么将再增加一个class: `<div class="static active text-danger"></div>`
+
+绑定的数据对象不必内联定义在模板里,比如：
+
+```html
+<div class="static" v-bind:class="classObject"></div>
+```
+
+```js
+data: {
+    classObject: {
+        active: true,
+        'text-danger': false
+    }
+}
+```
+
+渲染结果同样是：`<div class="static active">`
+
+当然，或许还会有种更合适的方式，那就是绑定一个返回对象的计算属性
+
+```js
+data: {
+    isActive: true,
+    error: null
+},
+computed: {
+    classObject: function() {
+        return {
+            active: this.isActive && !this.error,
+            'text-danger': this.error && this.error.type === 'fatal'
+        }
+    }
+}
+```
+
+### 数组语法
+
+同样的，我们可以把一个数组传给`v-bind:class`，以应用一个class列表
+
+```html
+<div v-bind:class="[activeClass,errorClass]"></div>
+```
+
+```js
+data: {
+    activeClass: 'active',
+    errorClass: 'text-danger'
+}
+```
+
+渲染结果为：`<div class="active text-danger"></div>`
+
+我们还可以写三元表达式，根据条件切换`class`：`div v-bind:class="[isActive ? activeClass : '', errorClass]"></div>`
+
+不过，当有多个条件 class 时这样写有些繁琐。所以在数组语法中也可以使用对象语法：`<div v-bind:class="[{ active: isActive }, errorClass]"></div>`
+
+### 用在组件上
+
+当在一个自定义组件上使用`class`属性时，这些类将被添加到该组件的根元素上面，这个元素上已经存在的类不会被覆盖。
+
+例如，你声明了这个组件
+
+```js
+Vue.component('my-component',{
+    template: `<p class="test1 test2"></p>`
+})
+```
+
+然后在使用它的时候添加一些class:`<my-component class="test3 test4"></my-component>`
+
+最终的HTML:`<p class="test1 test2 test3 test4"></p>`
+
+对于带数据绑定 class 也同样适用：`<my-component v-bind:class="{ active: isActive }"></my-component>`
+
+当`isActive`为true时，HTML终将被渲染为：`<p class="test1 test2 active"></p>`
+
+## Style(内联样式)绑定
+
+### style对象语法
+
+`v-bind:style`的对象语法十分直观——看着非常像 CSS，但其实是一个 JavaScript 对象。css属性名可以用驼峰式（camelCase）或短横线分割（'kebab-case'，需要单引号括起来）来命名：
+
+```html
+<div v-bind:style="{ color: activeColor, fontSize: fontSize + 'px' }"></div>
+<div v-bind:style="{'backgrond-color': avtiveColor,'font-size': fontSize + 'px'}"></div>
+```
+
+当然，更好的写法是直接绑定一个style对象，这样代码更具备可读性
+
+```html
+<div v-bind:style="{styleObject}"></div>
+```
+
+```js
+data: {
+    styleObject: {
+        color: 'red',
+        backgroundColor: 'skyblue'
+    }
+}
+```
+
+### style数组语法
+
+v-bind:style 的数组语法可以将多个样式对象应用到同一个元素上：`<div v-bind:style="[baseStyles, overridingStyles]"></div>`
+
+### 自动添加前缀
+
+当`v-bind:style`使用需要添加浏览器引擎前缀的 CSS 属性时，如`transform`，Vue.js 会自动侦测并添加相应的前缀。
+
+### 多重值
+
+从 Vue.js 2.3.0 起你可以为 `style` 绑定中的属性提供一个包含多个值的数组，常用于提供多个带前缀的值，例如：
+`<div :style="{ display: ['-webkit-box', '-ms-flexbox', 'flex'] }"></div>`
+这样写只会渲染数组中最后一个被浏览器支持的值。在本例中，如果浏览器支持不带浏览器前缀的`flexbox`，那么就只会渲染`display: flex`。
+
+## 条件渲染
+
+### v-if
+
+在字符串模板中，比如 Handlebars，我们得像这样写一个条件块：
+
+```html
+<!-- Handlebars 模板 -->
+{{#if ok}}
+  <h1>Yes</h1>
+{{/if}}
+```
+
+在 Vue 中，我们使用 v-if 指令实现同样的功能：`<h1 v-if="ok"></h1>`.而使用`v-else`则可以添加一个else块：`<h1 v-else>No</h1>`,Vue.js 2.1.0还新增了`vue-else-if`指令，用法参考js语法
+
+### 在template元素上使用v-if条件渲染分组
+
+因为`v-if`是一个指令，所以必须将它添加到一个元素上，但是如果想要切换多个元素，就需要配合`<template></template>`来使用了。
+
+可以把一个`<template>` 元素当做不可见的包裹元素，并在上面使用 v-if。最终的渲染结果将不包含 `<template>`元素
+
+```html
+<template v-if="ok">
+  <h1>Title</h1>
+  <p>Paragraph 1</p>
+  <p>Paragraph 2</p>
+</template>
+```
