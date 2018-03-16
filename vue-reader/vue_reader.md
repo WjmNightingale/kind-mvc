@@ -659,4 +659,237 @@ vm.items[1] = 'x' //非响应式
 vm.ites.length = 2 //非响应式
 ```
 
-第一类问题，可以用`vm.items[indexOfItem] = newValue`
+第一类问题，可以用以下两种方式实现`vm.items[indexOfItem] = newValue`的相同效果，同时触发状态更新：
+
+```js
+//Vue.set
+Vue.set(vm.items,indexOfItem,newValue)
+//set方法的别名（alian）是$set
+vm.$set(vm.items,indexOfItem,newValue)
+//Array.prototype.splice()
+vm.items.splice(indexOfItem,1,newValue)
+```
+
+第二类问题，就是`splice()`来解决：`vm.items.splice(newLenght)`
+
+同样由于JavaScript设计，Vue不能检测对象属性的添加或者删除
+
+```js
+var vm = new Vue({
+    data: {
+        a: 1
+    }
+})
+//vm.a 是响应的
+vm.b = 2
+//vm.b 不是响应的
+```
+
+对于已经创建的Vue实例，Vue.js不能动态添加根级别的响应式属性，但是可以使用`Vue.set(object,key,value)`方法向嵌套对象添加响应式属性，如：
+
+```js
+var vm = new Vue({
+    data: {
+        userProfile: {
+            name: 'wjm'
+        }
+    }
+})
+//通过Vue.set(object,key,value)方法添加一个新的`age`属性到嵌套的`userProfile`
+Vue.set(vm.userProfile,'age',27)
+//等价于
+vm.$set(vm.userProfile,'age',27)
+```
+
+有时你可能需要为已有的对象赋予多个新属性，比如使用`Object.assign()`或者`_.extend()`。在这种情况下，你应该用两个对象的属性创建一个新的对象，所以当需要为已有对象添加多个响应式属性时，不要像这样：
+
+```js
+Object.assign(vm.userProfile,{
+    age: 27,
+    favoriteColor: 'Vue Green'
+})
+```
+
+你应该这样做：
+
+```js
+vm.userProfile = Object.assign({},vm.userProfile,{
+    age: 27,
+    favoriteColor: 'Vue Green'
+})
+```
+
+### 显示过滤/排序结果
+
+有时，我们想要显示一个数组的过滤或者排序副本，而不实际改变或者重置原始数据，在这种情况下，可以创建返回过滤或排序数组的计算属性，比如：
+
+```html
+<ul>
+    <li v-for="n in evenNumbers">
+        {{n}}
+    </li>
+</ul>
+```
+
+```js
+data: {
+    numbers: [1,2,3,4,5,6]
+},
+computed: {
+    evenNumbers: function() {
+        return this.numbers.filter((number) => number % 2 === 0)
+    }
+}
+```
+
+在计算属性不适用的情况下（例如，在嵌套`v-for`循环中），你可以使用一个method方法：
+
+```html
+<ul>
+    <li v-for="n in even(numbers)">
+        {{n}}
+    </li>
+</ul>
+```
+
+```js
+data: {
+    numbers: [1,2,3,4,5]
+},
+methods: {
+    even: function(numbers) {
+        return number.filter(function(number) {
+            return number % 2 === 0
+        })
+    }
+}
+```
+
+### 一段取值范围的 v-for
+
+`v-for`也可以用来取整数，在这种情况下，它将重复多次模板
+
+```html
+<div>
+    <span v-for="n in 10">
+        {{n}}
+    </span>
+</div>
+```
+
+### v-for搭配template使用
+
+类似于`v-if`，你可以利用带有`v-for`的`<template>`来渲染多个元素，此时template会被循环渲染，比如：
+
+```html
+<ul>
+    <template v-for="item in items">
+        <li>{{item.msg}}</li>
+        <li class="divider"></li>
+    </template>
+</ul>
+```
+
+### v-for 和 v-if
+
+当这两个处于同一节点时，`v-for`的优先级比`v-if`要高，这就意味着`v-if`将会分别重复运行于每个`v-for`循环当中，如果你只是想为某一些节点渲染时，这种优先级机制将会非常有用：
+
+```html
+<ul>
+    <li v-for="todo in todos" v-if="!todo.isComplete">
+</ul>
+```
+
+上面的代码只会渲染显示未完成的todo
+
+如果你的目的是有条件地跳过循环的话，那么可以将`v-if`置于外层元素上或者是`<template>`，如：
+
+```html
+<ul v-if="todos.length">
+    <li v-for="todo in todos">
+        {{todo}}
+    </li>
+</ul>
+<p v-else>No todos left!</p>
+```
+
+### 组件的v-for
+
+在自定义组件里，你可以像任何普通元素一样用`v-for`,值得注意的点是，在高版本的Vue.js里，key值是必须的,如
+
+```html
+<my-component v-for="item in items" :key="item.id"></my-component>
+```
+
+然而，任何数据不会自动传递到组件里，因为每个组件都有其自己的作用域，为了把迭代数据传递到组件里，我们需要使用`props`：
+
+```html
+<my-component
+  v-for="(item,index) in items"
+  v-bind:item="item"
+  v-bind:index="index"
+  v-bind:key="item.id">
+</my-component>
+```
+
+不自动将`item`注入到组件里，是为了避免组件和`v-for`的紧密耦合，明确组件数据的来源能够使组件在其他场合复用。
+
+下面是一个简单的todoList的完整例子：
+
+```html
+<div id="todo-list-example">
+    <input v-model="newTodoText"
+           v-on:keyup.enter="addNewTodo"
+           placeholder="Add a todo"
+    >
+    <ul>
+        <li is="todo-item"
+            v-for="(todo,index) in todos"
+            v-bind:key="todo.id"
+            v-bind:title="todo.title"
+            v-on:remove="todos.splice(index,1)"
+        >
+    </ul>
+</div>
+```
+
+```js
+Vue.component('todo-item',{
+    template: `\
+    <li>\
+    {{title}}\
+    <button @:click="$emit(\'remove'\)">X</button>\
+    `,
+    props: ['title']
+})
+var vm = new Vue({
+    el: '#todo-list-example',
+    data: {
+        todos: [
+            newTodoText: ''
+            {
+                id: 1,
+                title: 'test1'
+            },
+            {
+                id: 2,
+                title: 'test2'
+            },
+            {
+                id: 3,
+                title: 'test3'
+            }
+        ],
+        nextTodoId: 4
+    },
+    methods: {
+        addNewTodo: function() {
+            this.todos.push({
+                id: this.nextTodoId++,
+                title: this.newTodoTitle
+            })
+            this.newTodoTitle = ''
+        }
+    }
+})
+```

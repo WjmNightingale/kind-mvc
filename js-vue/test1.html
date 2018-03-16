@@ -33,8 +33,11 @@
             <h2 v-bind:id="dynamicId"></h2>
             <button v-bind:disabled="isButtonDisabled">测试disabled属性是否存在</button>
             <button v-on:click="reverseMessage">点击一下反转message</button>
+
             <todo-item v-for="item in test2" v-bind:my="item" v-bind:key="item.id">
             </todo-item>
+
+            
             <p>Using v-html directive:
                 <span v-html="rawHtml"></span>
             </p>
@@ -67,6 +70,15 @@
             </ul>
             <ul>
                 <li v-for="(_,index) of test2">{{_.text}}</li>
+            </ul>
+        </div>
+        <div id="test-template-vfor">
+            <h6>测试v-for搭配template</h6>
+            <ul>
+                <template v-for="item in test1">
+                    <li>{{item.text}}</li>
+                    <li class="divdider">100001</li>
+                </template>
             </ul>
         </div>
     </div>
