@@ -449,3 +449,214 @@ v-bind:style 的数组语法可以将多个样式对象应用到同一个元素�
   <p>Paragraph 2</p>
 </template>
 ```
+
+### 用key管理可复用的元素
+
+Vue.js会尽可能高效地渲染元素，通常会复用已有的元素而不是从头开始渲染，比如，你可以允许用户再不同的登陆方式之间来回切换
+
+```html
+<template v-if="loginType === 'username'">
+    <label>Username</label>
+    <input placeholder="Enter your name">
+</template>
+<template v-else>
+    <label>Email</label>
+    <input placeholder="Enter your email address"></input>
+</template>
+```
+
+在以上页面中，切换loginType不会清除用户已经输入的内容，因为两个模板使用了相同的元素，`<input>`不会被替换--仅仅是替换了它的`placeholder`。
+
+但是实际上有些时候，这样的做法是不符合实际需求的，我们并不需要复用这两个元素，Vue.js提供了一种方式来表达“这两个元素是完全独立的，请不要复用它们”,为不想被复用的元素添加一个唯一值得key属性即可
+
+```html
+<template v-if="loginType === 'username'">
+  <label>Username</label>
+  <input placeholder="Enter your username" key="username-input">
+</template>
+<template v-else>
+  <label>Email</label>
+  <input placeholder="Enter your email address" key="email-input">
+</template>
+```
+
+### v-show
+
+Vue.js另一个用于条件展示元素的选项是`v-show`命令，用法：`<h1 v-show="ok"></h1>`
+
+相比于`v-if`，带有`v-show`的元素始终会被渲染并被保留在DOM中，`v-show`是切换元素的css属性`display`,而且要注意的是,`v-show`不支持template元素，也不支持`v-else`
+
+### v-show VS v-if
+
+`v-if`是真正的条件来渲染，因为它会确保在切换过程中条件块内的事件监听器和子组件适当地被销毁和重建。
+
+`v-if`也是惰性的，如果在初始渲染条件为假时，则什么也不做，直到条件第一次变为真时，才会开始渲染条件块；而`v-show`则是不管初始条件是什么，元素总会被渲染，并且知识简单地基于css进行切换。
+
+一般来说，`v-if`有着更高的切换开销，而`v-show`有着更高的渲染开销，所以对于需要频繁切换的应选用`v-show`，而初始渲染开销较大的而运行时条件很少改变的，应该选用`v-if`
+
+## 列表渲染
+
+### v-for 数组
+
+我们使用`v-for`指令根据一组数组的选项列表进行渲染，使用`item in items`的语法，items是源数据数组，item是数组元素迭代的别名
+
+```html
+<ul id=""test>
+    <li v-for="item in items">
+        {{item.message}}
+    </li>
+</ul>
+```
+
+```js
+var vm = new Vue({
+    el: 'test',
+    data: {
+        items: [
+            {message: 'test1'},
+            {message: 'test2'}
+        ]
+    }
+})
+```
+
+渲染结果：
+
+```html
+<ul id=""test>
+    <li>test1</li>
+    <li>test2</li>
+</ul>
+```
+
+在`v-for`块中，我们拥有对父作用域属性的完全访问权限，`v-for`还支持一个可选的第二个参数为当前的索引
+
+```html
+<ul id="test">
+  <li v-for="(item, index) in items">
+    {{ parentMessage }} - {{ index }} - {{ item.message }}
+  </li>
+</ul>
+```
+
+```js
+var vm = new Vue({
+    el: 'test',
+    data: {
+        parentMessage: 'Parent',
+        items : [
+            {message: 'test1'},
+            {message: 'test2'}
+        ]
+    }
+})
+```
+
+渲染结果:
+
+```html
+<ul>
+    <li>Parent-0-test1</li>
+    <li>Parent-1-test2</li>
+</ul>
+```
+
+### v-for 对象
+
+`v-for`指令也可以用来迭代对象属性,如：
+
+```html
+<ul id="test">
+    <li v-for="(value,key,index) in object">
+        {{index}}--{{key}}：{{value}}
+    </li>
+</ul>
+```
+
+```js
+var vm = new Vue({
+    el: 'test',
+    data: {
+        object: {
+            name: 'wjm',
+            gender: 'male',
+            age: 24
+        }
+    }
+})
+```
+
+渲染结果
+
+```html
+<ul id="test">
+    <li>0--name:wjm</li>
+    <li>1--gender:male</li>
+    <li>2--age:24</li>
+</ul>
+```
+
+`v-for`在遍历对象时，是按 Object.keys() 的结果遍历，但是不能保证它的结果在不同的 JavaScript 引擎下是一致的。
+
+### key
+
+当Vue.js用`v-for`正在更新已渲染过的元素列表时，它默认用"就地复用"策略，如果数据项的顺序被改变，Vue将不会移动DOM元素来匹配数据项的顺序，而是简单的复用此处的每个元素，并且确保它在特定索引下显示已经被渲染过的每个元素
+
+这个默认模式是高效的，但是只是适用于不依赖子组件状态或临时DOM状态（例如：表单的输入值）的列表渲染输出。
+
+为了给Vue一个提示，以便于它能够追踪每个节点的身份，从而重用和重新排序现有的元素，你需要为每项提供一个唯一的Key属性，理想的key是每项都有的且唯一的id，但它的工作方式类似于一个属性，所以你需要用 v-bind 来绑定动态值 (在这里使用简写)：
+
+```html
+<div v-for="item in items" :key="item.id">
+  <!-- 内容 -->
+</div>
+```
+
+建议尽可能在使用`v-for`时提供 key，除非遍历输出的 DOM 内容非常简单，或者是刻意依赖默认行为以获取性能上的提升。
+
+因为它是 Vue 识别节点的一个通用机制，key 并不与`v-for`特别关联，key 还具有其他用途，我们将在后面的指南中看到其他用途。
+
+## 数组更新检测
+
+### 变异方法
+
+Vue包含一组观察数组的方法，所以它们也将会触发视图更新，这些方法如下：
+
+1. push()
+2. pop()
+3. shift()
+4. unshift()
+5. splice()
+6. sort()
+7. reverse()
+
+### 替换数组
+
+变异方法（mutation method），顾名思义，会改变被这些方法调用的原始数组。相比之下，也有非变异 (non-mutating method) 方法，例如：`filter()`，`concat()`，`slice()`。这些不会改变原始数组，但是总是返回一个新值，当使用非变异方法时，可以用新数组替换旧数组:
+
+```js
+example.itmes = example.items.filter(function(item) {
+    return item.message.match(/Foo/)
+})
+```
+
+### 注意事项
+
+由于JavaScript的限制，Vue不能检测以下变动的数组：
+
+1、利用索引直接设置一个项时，例如：vm.items[indexOfItem] = newValue
+2、修改数组长度时，例如：vm.items.length = newlength
+
+举个例子：
+
+```js
+var vm = new Vue({
+    data: {
+        itmes: ['a','b','c']
+    }
+})
+vm.items[1] = 'x' //非响应式
+vm.ites.length = 2 //非响应式
+```
+
+第一类问题，可以用`vm.items[indexOfItem] = newValue`
