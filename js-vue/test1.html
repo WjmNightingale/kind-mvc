@@ -205,3 +205,12 @@
 </body>
 
 </html>
+
+
+
+<div>
+        <h3>v-on:click.prevent.self,会阻止所有点击事件</h3>
+        <div v-on:click.prevent.self style="width:50px;height:50px;background-color:red">点击div1
+            <button v-on:click=="isClick1($event)">点击button1</button>
+        </div>
+    </div>

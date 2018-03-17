@@ -893,3 +893,376 @@ var vm = new Vue({
     }
 })
 ```
+
+## 事件处理
+
+在Vue.js中，可以用`v-on`监听DOM事件，并在触发时运行一些JavaScript代码，如：
+
+```html
+<div id="test">
+    <button v-on:click="counter += 1">Add 1</button>
+    <p>The button above has benn clicked{{counter}}times</p>
+</div>
+<script>
+    var vm = new Vue({
+        el: `#test`,
+        data: {
+            counter: 0
+        }
+    })
+</script>
+```
+
+当然，更多时候事件处理逻辑会较为复杂，所以直接把JavaScript代码写在`v-on`指令中是不可行的，因此`v-on`还可以接受一个需要调用的方法的名称，如：
+
+```html
+<div id="test">
+    <button v-on:click="greet">Greet</button>
+</div>
+<script>
+    var vm = new Vue({
+        el: 'test',
+        data: {
+            name: 'Vue.js'
+        },
+        methods: {
+            greet: function(event) {
+                alert('Hello'+this.name+'!')
+                if(event) {
+                    alert(event.target.tagName)
+                }
+            }
+        }
+    })
+</script>
+```
+
+除了直接绑定到一个方法，也可以在内联JavaScript语句中调用
+
+```html
+<div id="test">
+    <button v-on:click="say('hi')">Hi</button>
+    <button @click="say('what')">What</button>
+</div>
+<script>
+    var vm = new Vue({
+        el: '#example-3',
+        methods: {
+            say: function(message) {
+                alert(message)
+            }
+        }
+    })
+</script>
+```
+
+有时也需要在内联语句中处理访问器中的原始DOM事件，可以用特殊变量`$event`把它传入方法：
+
+```html
+<button @click="warn('Form cannot be submitted yet.',$event)">Submit</button>
+```
+
+```js
+methods: {
+    warn: function(message,event) {
+        //现在我们可以访问原生事件对象
+        if(event) event.preventDefault()
+        alert(message)
+    }
+}
+```
+
+event.target 标识事件发生的元素
+event.currentTarget 事件触发时事件处理程序所作用到的元素
+event.prevenrDefault()用于取消事件默认动作，event.cancelable属性用来判断一个事件的默认动作是否可以被取消
+event.stopPropagation用来阻止事件冒泡
+target.addEventListener(type,listener,opttions)
+
+```js
+options = {
+    //ture：表示listener(事件处理程序)会在事件发生后在捕获阶段传播到该EventTarget时触发
+    capture: boolean,
+    //true：表示listener在添加之后最多调用一次，且listener在调用后被自动移除
+    once: boolean,
+    //true：表示listener永远不会调用event.preventDefault，如果仍然试图调用客户端则会忽略它
+    passive: boolean
+}
+target.addEventListener(type,listener,opttions)
+```
+
+### 事件修饰符
+
+在事件处理程序中调用`event.preventDefault()`或是`event.stopPropagation()`是非成常见的需求，尽管我们可以在方法中轻松实现这一点，但是更优雅的处理方式：事件处理函数中只包含纯粹的逻辑，而不是去处理DOM事件细节。而Vue.js就为此提供了事件修饰符以解决这个问题，常见的事件修饰符(一般以`.`开头)如下：
+
+1. `.stop` 阻止事件继续传播
+2. `.prevent` 阻止默认事件行为
+3. `capture` 添加事件监听器时先使用事件捕获模式，即元素自身触发的事件先在此处理，然后才交由内部元素处理
+4. `.self` 只有当event.target===event.currentTarget时，才会触发事件处理函数
+5. `.once` 事件处理函数只会触发一次，而且不同于其他修饰符只能对原生的DOM事件起作用，`.once`修饰符还可被用于组件事件上
+6. 使用事件修饰符时，顺序异常重要，相应的代码会以同样的顺序产生，如：`v-on:click.prevent.self`会阻止所有元素的默认点击事件处理程序执行，而`v-on:click.self.prevent`只会阻止自身上触发的元素默认点击事件处理程序执行
+7. Vue.js 2.3.0新增`.passive`修饰符
+
+```html
+<!-- 滚动事件的默认行为 (即滚动行为) 将会立即触发 -->
+<!-- 而不会等待 `onScroll` 完成  -->
+<!-- 这其中包含 `event.preventDefault()` 的情况 -->
+<div v-on:scroll.passive="onScroll">...</div>
+<!-- 这个 .passive 修饰符尤其能够提升移动端的性能。-->
+```
+
+### 按键修饰符
+
+在监听键盘事件时，我们经常需要检查常见的键值。Vue.js允许`v-on`在监听键盘事件时添加按键修饰符,如：
+
+```html
+<!-- 只有在 `keyCode` 是 13 时调用 `vm.submit()` -->
+<input v-on:keyup.13="submit">
+```
+
+然而，记住所有的`keyCode`是较为困难的，所以Vue为最常用的按键提供了别名：
+
+```html
+<input v-on:keyup.enter="submit">
+```
+
+常见的按键别名：
+
+1. `.enter`
+2. `.tab`
+3. `delete` 删除和退格键
+4. `.esc`
+5. `.space`
+6. `.up`
+7. `.down`
+8. `.left`
+9. `right`
+
+可以通过全局的 `config.keyCode` 对象自定义按键修饰符别名,比如：
+
+```js
+Vue.config.keyCode.f1=112
+```
+
+### 自动匹配按键修饰符
+
+Vue.js 2.5.0新增，可以直接将`KeyboardEvent.key`暴露的任意有效按键名转换为kebab-base来作为修饰符
+
+```html
+<input @keyup.page-down="onPageDown">
+```
+
+在上面的例子中，处理函数`onPageDown()`仅在`$event.key === 'PageDown'`时被调用
+
+### .exact修饰符
+
+`.exact`允许你控制有精确的系统修饰符组合触发的事件
+
+```html
+<!-- 即使Alt或者Shift被一同按下时也会触发 -->
+<button @click.ctrl="onClick">A</button>
+
+<!-- 有且只有 Ctrl 被按下的时候才触发 -->
+<button @click.ctrl:exact="onCtrlClick">A</button>
+
+<!-- 没有任何系统修饰符被按下的时候才触发 -->
+<button @click.exact="onClick">A</button>
+```
+
+### 为什么在HTML中监听事件
+
+所有的Vue.js事件处理方法和表达式都严格绑定在当前的视图的`ViewModel`上，它不会导致任何维护上的困难。实际上，使用Vue.js的`v-on`有以下几个好处：
+
+1. 扫一眼HTML模板便能轻松定位在JavaScript代码里对应的方法
+2. 因为你无须在JavaScript里手动绑定事件，你的`ViewModel`代码可以是非常纯粹的逻辑，和DOM完全解耦，更加方便测试
+3. 当一个`ViewModel`被销毁时，所有的事件处理器都会自动删除，你无须担心如何清理它们
+
+## 表单输入绑定
+
+你可以用`v-model`指令在表单`<input>`以及`<textarea>`元素上创建双向的数据绑定，它会根据控件类型自动选取正确的方法来更新元素，尽管有些神奇，但是`v-model`本质上不过是语法糖，它负责监听用户的输入事件以及更新数据，并对一些极端场景进行一些特殊的处理。
+
+`v-model`会忽略所有表单元素的`value`、`checked`、`selected`特性的初始值，而总是将Vue实例的数据作为数据来源，你应该通过JS在组件的`data`选项中声明初始值
+
+### 单行文本输入
+
+```html
+<input v-model="message" placeholder="单行文本编辑区域">
+<p{{message}}></p>
+```
+
+### 多行文本
+
+```html
+<span>Multiline message is: </span>
+<p style="white-space: pre-line;">{{message}}</p>
+<br>
+<textarea v-model="message" placeholder="多行文本显示区域"></textarea>
+```
+
+### 复选框
+
+单个复选框，绑定到布尔值：
+
+```html
+<input type="checkbox" id="checkbox" v-model="checked">
+<label for="checkbox">{{checked}}</label>
+```
+
+多个复选框，数值value绑定到同一个数组
+
+```html
+<div id='test'>
+  <input type="checkbox" id="jack" value="Jack" v-model="checkedNames">
+  <label for="jack">Jack</label>
+  <input type="checkbox" id="john" value="John" v-model="checkedNames">
+  <label for="john">John</label>
+  <input type="checkbox" id="mike" value="Mike" v-model="checkedNames">
+  <label for="mike">Mike</label>
+  <br>
+  <span>Checked names: {{ checkedNames }}</span>
+</div>
+```
+
+```js
+new Vue({
+  el: '#test',
+  data: {
+    checkedNames: []
+  }
+})
+```
+
+### 单选按钮
+
+```html
+<span>单选按钮值绑定</span>
+<div>
+    <label for="one">
+        <input type="radio" id="one" value="1" v-model="picked">
+    </label>
+    <label for="two">
+        <input type="radio" id="two" value="2" v-model="picked">
+    </label>
+    <label for="three">
+        <input type="radio" id="three" value="3" v-model="picked">
+    </label>
+    <br>
+    <span>picked:{{picked}}</span>
+</div>
+```
+
+### 选择框
+
+单选下拉框：
+
+```html
+<div>
+    <select name="single" id="single" v-model="selected">
+        <option disabled value="">请选择</option>
+        <option value="apple">苹果</option>
+        <option value="pear">梨子</option>
+        <option value="orange">橘子</option>
+    </select>
+    <br>
+    <span>单选值：{{selected}}</span>
+</div>
+```
+
+多选下拉框：
+
+```html
+<span>动态渲染多选下拉框
+<div>
+    <select  multiple  >
+        <option v-for="option in mselected" v-bind:value="option.value">
+            {{option.text}}
+        </option>
+    </select>
+    <br>
+    <span>multi:{{mselected}}</span>
+</div>
+```
+
+### 控件值绑定
+
+```html
+<!-- 当选中时，`picked` 为字符串 "a" -->
+<input type="radio" v-model="picked" value="a">
+<!-- `toggle` 为 true 或 false -->
+<input type="checkbox" v-model="toggle">
+<!-- 当选中第一个选项时，`selected` 为字符串 "abc" -->
+<select v-model="selected">
+    <option value="abc"></option>
+</select>
+```
+
+### 表单控件修饰符
+
+`.layz`在默认情况下，`v-model`在每次`input`事件触发后将输入框的值与数据进行同步，你可以添加`lazy`修饰符，从而转变为使用`change`事件进行同步：
+
+```html
+<!-- 在“change”时而非“input”时更新 -->
+<input v-model.lazy="msg" >
+```
+
+`.number`修饰符会自动将用户输入值转换为数值类型
+
+```html
+<input v-model.number="age" type="number">
+```
+
+`.trim`用来过滤用户输入的首尾空白字符串
+
+```html
+<input v-model.trim="msg">
+```
+
+## Vue.js组件系统
+
+组件(components)是Vue.js最强大的功能之一，组件可以拓展HTML元素，封装可重用的代码。在较高的层面上，组件是自定义的元素，Vue.js的编译器为其添加特殊的功能，在有些情况下，组件也可以表现为用`is`特性进行拓展的原生HTML元素
+
+所有的Vue组件同时也都是Vue.js的实例，所以可以接受相同的选项对象（除了一些根级别特有的选项）并提供相同的生命周期钩子。
+
+### 使用组件--全局注册
+
+一般使用`Vue.component(tagName,options)`，例如：
+
+```js
+Vue.component('my-component',{
+    //options
+})
+```
+
+要注意的一点是，要确保在初始化根实例之前注册组件。组件在注册之后，便可以作为自定义元素`<my-component></my-component>`在一个实例模板中使用，如下：
+
+```html
+<div id="test">
+    <my-component></my-component>
+</div>
+<script>
+    Vue.component('my-component',{
+        template:`<div>A custom component!</div>`
+    })
+    new Vue({
+        el: '#test'
+    })
+</script>
+```
+
+### 使用组件--局部注册
+
+更多时候，我们并不需要在全局注册组件，而是可以通过某个Vue实例/组件的实例选项`components`注册仅在其作用域中可用的组件：
+
+```js
+var Child = {
+    child1: {template:`<h1>custom-h1</h1>`},
+    child2: {template:`<span>custom-span</span>`}
+}
+new Vue({
+    //...
+    components: {
+        //<my-component> 将只在父组件模板中可用
+        '1-component': Child.child1,
+        '2-component': Child.child2
+    }
+})
+```
