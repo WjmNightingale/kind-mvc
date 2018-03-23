@@ -114,8 +114,6 @@
             <h3>局部注册模板使用</h3>
             <div>
                 <myfirst-component></myfirst-component>
-            </div>
-            <div>
                 <mysecond-component></mysecond-component>
             </div>
         </div>
@@ -132,7 +130,7 @@
         })
         var Child = {
             child1: {
-                template: `<button >custom</button>`
+                template: `<button @click="myClick">{{comdata}}</button>`
             },
             child2: {
                 template: `<span>custom-span</span>`
@@ -225,8 +223,20 @@
                 }
             },
             components: {
-                'myfirst-component': Child.child1,
-                'mysecond-component': Child.child2
+                // 'myfirst-component': {
+                //     template: Child.child1,
+                //     data: function () {
+                //         return {
+                //             comdata: 'Hello 组件'
+                //         }
+                //     },
+                //     methods: {
+                //         myClick: function () {
+                //             console.log('这是组件button')
+                //         }
+                //     }
+                // },
+                // 'mysecond-component': Child.child2,
             }
         })
     </script>

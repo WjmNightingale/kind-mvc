@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>不是父子关系的Vue组件简单通信</title>
+    <script src="https://cdn.bootcss.com/vue/2.5.13/vue.min.js"></script>
+</head>
+
+<body>
+    <div id="app">
+        <comp-a></comp-a>
+        <comp-b></comp-b>
+    </div>
+    <script>
+        let eventHub = new Vue()
+        Vue.prototype.$eventHub = eventHub
+        Vue.component('comp-a', {
+            template: `<div>aaa<button @click="notify">点击我呀</button></div>`,
+            methods: {
+                notify: function () {
+                    var res = this.__proto__ === Vue.prototype
+                    this.$eventHub.$emit('xxx', 'hi,这是毫无关系的组件通信哟')
+                }
+            }
+        })
+        Vue.component('comp-b', {
+            template: `<div ref="show">bbb<div ref="output"></div></div>`,
+            created() {
+                this.$eventHub.$on('xxx', function (data) {
+                    console.log(this)
+                   console.log('监听A组件数据---'+data)
+                })
+            }
+        })
+        let app = new Vue({
+            el: '#app'
+        })
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Vue组件的自定义事件</title>
+    <script src="https://cdn.bootcss.com/vue/2.5.13/vue.min.js"></script>
+</head>
+<body>
+    <div id="test">
+       <div class="one">
+            <p>{{total}}</p>
+        <button-counter v-on:increment="incrementTotal">xxx</button-counter>
+        <button-counter v-on:increment="incrementTotal">yyy</button-counter>
+       </div>
+       <div class="two">
+           <p v-for="msg in messages">{{msg}}</p>
+           <p v-for="item in testdata">{{item}}</p>
+           <button-message v-on:father-event="handleMessage" @father-self="handleSelf"></button-message>
+       </div>
+    </div>
+    <script>
+    Vue.component('button-counter',{
+        template: `<button @click="incrementCounter">{{ counter }}</button>`,
+        data: function() {
+            return {
+                counter: 0
+            }
+        },
+        methods: {
+            incrementCounter: function() {
+                this.counter += 1
+                this.$emit('increment')
+            }
+        }
+    })
+    Vue.component('button-message', {
+        template: `<div>
+        <input type="text" v-model="message">
+        <button v-on:click="handleSendMessage">Send</button>
+        <input type="text" v-model="myself">
+        <button @click="selfHandle">点我呀</button>
+        </div>`,
+        data: function () {
+            return {
+                message: 'test message',
+                myself: 'it is me'
+            }
+        },
+        methods: {
+            handleSendMessage: function () {
+                console.log('handleSendMessage')
+                //模版监听一个名为'father-event'的事件，模板内部的button则注册一个点击事件处理函数handleSendMessage
+                //当button被点击时，handleSendMessage会执行，该函数会在全局发布一个`father-event`事件触发了的信号，同时传递数据
+                //而模板用`v-on:`注册了这个`father-event`事件的处理函数handleMessage，同时接受传来的数据参数
+                this.$emit('father-event',{message: this.message})
+            },
+            selfHandle: function () {
+                this.$emit('father-self',{myself: this.myself})
+            }
+        }
+    })
+    new Vue({
+        el: '#test',
+        data: {
+            total: 0,
+            messages: [],
+            testdata: []
+        },
+        methods: {
+            incrementTotal: function () {
+                this.total += 1
+            },
+            handleMessage: function (payload) {
+                console.log('handleMessage')
+                console.log('payload-data--')
+                console.log(payload)
+                this.messages.push(payload.message)
+                console.log(this.messages)
+            },
+            handleSelf: function (payload) {
+                this.testdata.push(payload.myself)
+            }
+        }
+    })
+    </script>
+</body>
+</html>
