@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Vue的切换动画transtion</title>
+    <script src="https://cdn.bootcss.com/vue/2.5.13/vue.min.js"></script>
+    <!-- 引入CSS资源 -->
+    <link href="https://cdn.jsdelivr.net/npm/animate.css@3.5.1" rel="stylesheet" type="text/css">
+    <style>
+        /* #demo {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            text-align: center;
+            height: 100vh;
+        } */
+
+        #demo>button {
+            width: 100px;
+            height: 50px;
+        }
+
+        p {
+            color: orange;
+        }
+
+        /* CSS过渡transition */
+        /* 可以设置不同的进入和离开动画 */
+        /* 设置持续时间和动画函数 */
+        /* .fade-enter-active {
+            transition: all 2s ease;
+        }
+        .fade-leave-active {
+            transition: all 2s cubic-bezier(1.0,0.5,0.8,1.0)
+        }
+        .fade-enter,.fade-leave-to {
+            transform: translateX(10px);
+            opacity: 0;
+        } */
+
+        /* CSS动画animation */
+        /* .fade-enter-active {
+            animation: bounce-in .5s;
+        }
+        .fade-leave-active {
+            animation: bounce-in .5s reverse;
+        }
+        @keyframes bounce-in {
+            0% {
+                transform: scale(0)
+            }
+            50% {
+                transform: scale(1.5)
+            }
+            100% {
+                transform: scale(1)
+            }
+        } */
+
+        /* 自定义类名 结合第三方动画库Animate.css使用*/
+    </style>
+</head>
+
+<body>
+    <div id="demo">
+        <div>
+            <button @click="show = !show">
+                Toggle Show
+            </button>
+        </div>
+        <div>
+            <!-- 自定义类名 结合第三方动画库Animate.css使用 -->
+            <transition 
+                name="fade"
+                enter-active-class="animated tada"
+                leave-active-class="animated bounceOutRight"
+            >
+                <p v-if="show">Lorem ipsum </p>
+            </transition>
+        </div>
+    </div>
+    <script>
+        new Vue({
+            el: '#demo',
+            data: {
+                show: true
+            }
+        })
+    </script>
+</body>
+
+</html>

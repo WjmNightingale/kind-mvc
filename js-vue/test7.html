@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>动态组件</title>
+    <script src="https://cdn.bootcss.com/vue/2.5.13/vue.min.js"></script>
+</head>
+
+<body>
+    <div id="app">
+        <div class="one">
+            <p>'keep-alive'指令可以将切换出去的组件保留在内存中，保留它的状态或者避免重新渲染</p>
+            <p>在input区域输入任意字符串，切换后仍然被保留</p>
+            <keep-alive>
+                <!-- 'keep-alive'指令可以将切换出去的组件保留在内存中，保留它的状态或者避免重新渲染 -->
+                <component :is="currentView" ref="{{currentView}}+'comp'">
+                </component>
+            </keep-alive>
+        </div>
+        <button @click="changeTemplate">点我动态切换组件</button>
+        <div class="two">
+            <component :is="arch" ref="archives"></component>
+        </div>
+    </div>
+    <script>
+        var vm = new Vue({
+            el: '#app',
+            data: {
+                currentView: 'home',
+                arch: 'arch'
+            },
+            components: {
+                home: {
+                    template: `
+                <div class="home">
+                    <h1>Home</h1>
+                    <p>这是主页</p>
+                    <input type="text" placeholder="请随意输入一个字符串，看切换后字符串是否被保留">
+                <div>
+                `
+                },
+                posts: {
+                    template: `
+                <div class="posts">
+                    <h1>posts</h1>
+                    <p>这是文章区域</p>
+                    <input type="text" placeholder="请随意输入一个字符串，看切换后字符串是否被保留">
+                <div>
+                `
+                },
+                arch: {
+                    template: `
+                    <div class="arch">
+                    aaa
+                    <p>这里是archives</p>
+                    </div>
+                    `
+                }
+            },
+            methods: {
+                changeTemplate: function () {
+                    this.currentView = this.currentView === 'home' ? 'posts' : 'home'
+                }
+            }
+        })
+        vm.$refs.archives.$el.textContent = '替换数据'
+        console.log(vm.$refs.archives.$el.textContent)
+
+    </script>
+</body>
+
+</html>

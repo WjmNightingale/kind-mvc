@@ -1748,4 +1748,562 @@ Vue.component('child-component', {
 
 ## 单个插槽
 
-除非子组件模板包至少包含一个`<slot>`插口
+除非子组件模板包至少包含一个`<slot>`插口，否则父组件的内容将会被“丢弃”。当子组件只有一个没有属性的插槽时，父组件传入的整个内容片段将被插入到插槽所在的DOM位置，并将替换掉插槽标签本身。
+
+最初在`<slot>`标签中的任何内容都将被视为备用内容。备用内容在子组件的作用域内编译，并且只有在宿主元素为空，且没有要插入的内容时才显示备用内容
+
+假定`my component`组件有如下模板：
+
+```html
+<div>
+<h2>我是子组件标题</h2>
+<slot>
+只是在没有要分发的内容时才会显示
+</slot>
+</div>
+```
+
+父组件模板
+
+```html
+<div>
+<h1>我是父组件的标题</h1>
+<my-component>
+<p>这是一些初始内容</p>
+<p>这是更多初始内容</p>
+</my-component>
+</div
+```
+
+渲染结果为：
+
+```html
+<div>
+<h1>我是父组件的标题</h1>
+<div>
+ <h2>我是子组件的标题</h2>
+ <p>这是一些初始内容</p>
+ <p>这是更多内容</p>
+</div>
+</div>
+```
+
+## 具名插槽
+
+`<slot>`元素可以用一个特殊的特性`name`来进一步配置如何分发内容，多个插槽可以有不同的名字，具体插槽将匹配内容片段中有对应的`<slot>`特性的元素
+
+仍然可以有一个匿名插槽，它是默认插槽，作为找不到匹配内容片段的备用插槽，如果没有默认插槽，这些找不到匹配的内容片段将被抛弃
+
+假定我们有一个`app-layout`组件，它的模板为：
+
+```html
+<div class="container">
+    <header>
+        <slot name="header"></slot>
+    </header>
+    <main>
+        <slot></slot>
+    </main>
+    <footer>
+        <slot name="footer"></slot>
+    </footer>
+</div>
+```
+
+父组件模板为：
+
+```html
+<app-layout>
+    <h1 slot="header">这里可能是一个页面标题</h1>
+    <p>主要内容的一个段落</p>
+    <p>另一个主要内容的段落</p>
+    <p slot="footer">这里有一些联系方式</p>
+</app-layout>
+```
+
+渲染结果为：
+
+```html
+<div class="container">
+    <header>
+        <h1>这里可能是一个页面标题</h1>
+    </header>
+    <main>
+        <p>主要内容的一个段落</p>
+        <p>另一个主要段落</p>
+    </main>
+    <footer>
+        <p>这里有一些联系方式</p>
+    </footer>
+</div>
+```
+
+## 作用域插槽
+
+作用域插槽是一种特殊类型的插槽，用作一个(能被传递数据的)可重用模板，来代替已经渲染好的元素。
+
+在子组件中，只需要将数据传递到插槽，就像你将prop传递给组件一样
+
+```html
+<div class="child">
+    <slot text="hello from child"></slot>
+</div>
+```
+
+在父级中，具有特殊属性的`slot scope`的`template`元素必须存在，表示它是作用域插槽的模板，`slot scope`的值将被用作一个临时变量名，此变量接收从子组件传递过来的prop对象。在Vue.js 2.5.0+ 后，`slot-scope`能被用在任意元素或组件当中而不再局限于`template`元素
+
+```html
+<div class="parent">
+    <child>
+        <template slot-scope="props">
+            <span>hello from parent</span>
+            <span>{{props.text}}</span>
+        </template>
+    </child>
+</div>
+```
+
+作用域插槽更典型的用例是在列表组件中，允许使用者自定义如何渲染列表的每一项
+
+## 动态组件
+
+通过使用保留的`<component>`元素，并且对is特性进行动态绑定，那么开发者就可以在同一个挂载点动态切换多个组件
+
+`keep-alive`可以将切换的组件保留在内存当中，保留组件切换时的状态或避免重新渲染
+
+## 编写可复用的组件
+
+在编写组件时，应当考虑组件以后是否会被复用。一次性组件有紧密的耦合没有关系，但是可复用的组件就应当定义一个清晰的公开接口，同时也不要对外层的数据做出任何假设
+
+Vue组件的API来自三部分 --- prop、事件、插槽
+
+1. prop 允许外部环境传递数据给组件
+2. 事件允许从组件内由事件触发影响外部环境，组件报告自己内部发生了什么事件，外部根据发生的事件做相应的调整
+3. 插槽允许外部环境将额外的内容组合在组件当中
+
+使用`v-bind`、`v-on`的简写语法，模板的意图会更加清楚而简洁
+
+```html
+<my-component
+    :foo="baz"
+    :bar="qux"
+    @event-a="doThis"
+    @event-b="doThat"
+>
+<img slot="icon" src="...">
+<p slot="main-text">Hello</p>
+</my-component>
+```
+
+## 子组件的引用
+
+尽管有prop和事件，但是有时仍然需要在JavaScript中直接访问子组件，为此可以使用`ref`属性为子组件指定一个引用id,如：
+
+```html
+<div id="parent">
+    <user-profile ref="profile"></user-profile>
+</div>
+```
+
+```js
+var parent = new Vue({
+    el: '#parent'
+})
+var child = parent.$refs.profile
+```
+
+当`ref`和`v-for`一起使用时，获取到的引用会是一个数组，包含和循环数据源对应的子组件
+
+`$refs` 只在组件渲染完成后才填充，并且它是非响应式的。它仅仅是一个直接操作子组件的应急方案——应当避免在模板或计算属性中使用 `$refs`。
+
+## 异步组件
+
+在大型应用中，我们需要将应用拆分为多个小模块，按需从服务器下载。为了进一步简化，Vue.js允许将组件定义成一个工厂函数，异步地解析组件的定义，Vue.js只在组件需要渲染时触发工厂函数，并且把结果缓存起来，用于后面的再次渲染。例如：
+
+```js
+Vue.component('async-test',function (resolve,reject) {
+    setTimeout(function () {
+        //将组件定义传入resolve回调函数
+        resolve ({
+            template: `<div> I am async !</div>`
+        })
+    },1000)
+})
+```
+
+工厂函数接受一个`resolve`回调，在收到从服务器下载的组件定义时 调用。也可以调用`reject(reason)`指示加载失败，这里使用一个`setTimeout`只是为了演示，实际上如何获取组件完全由你决定。一般推荐使用`webpack的代码分割功能`来使用
+
+```js
+Vue.component('async-test',function (resolve) {
+    //这个特殊的语法`require`告诉webpack
+    //自动将编译后的代码分割成不同语块
+    //这些块将通过Ajax自动请求下载功能
+    require(['./my-async-component'],resolve)
+})
+```
+
+当然，你也可以在工厂函数中返回一个`Promise`，所以当使用webpack2+ES2015的语法时可以这样
+
+```js
+Vue.component('async-webpack-test', () => {
+    return import('./my-async-component')
+})
+```
+
+Also，当使用局部注册时，也可以直接提供一个返回的`Promise`函数
+
+```js
+new Vue({
+    //...
+    components: {
+        'my-component': () => {
+            return import('./my-async-component')
+        }
+    }
+})
+```
+
+## 高级异步组件
+
+自Vue.js 2.30起，异步组件的工厂函数也可以返回一个如下的对象：
+
+```js
+const AsyncComp = () => {
+    //需要加载的组件，应该是个promise
+    component: import('./MyComp.vue'),
+    //加载中应当被渲染的组件
+    loading: LoadingComp,
+    //出错时渲染的组件
+    error: ErrorComp,
+    //渲染 加载中组件 前的等待时间，默认:200ms
+    delay: 200,
+    //最常等待时间，超出此时间则渲染错误组件，默认: Infinity
+    timeout: 3000
+}
+```
+
+值得注意的是，当一个异步组件被作为`vue-router`的路由组件使用时，这些高级选项都是无效的，因为在路由切换前，就会提前加载所需要的异步组件。
+
+## 组件命名约定
+
+当注册组件(或者prop)时，可以使用kebab-base(短横线分割)、camelCase(驼峰式命名)、PascalCase(首字母大写命名)
+
+```js
+// 在组件定义中
+components: {
+  // 使用 kebab-case 注册
+  'kebab-cased-component': { /* ... */ },
+  // 使用 camelCase 注册
+  'camelCasedComponent': { /* ... */ },
+  // 使用 PascalCase 注册
+  'PascalCasedComponent': { /* ... */ }
+}
+```
+
+```html
+<!-- 而在 HTML 模板中始终使用 kebab-case -->
+<kebab-cased-component></kebab-cased-component>
+<camel-cased-component></camel-cased-component>
+<pascal-cased-component></pascal-cased-component>
+```
+
+当使用字符串模式时，可以不受 HTML 大小写不敏感的限制。这意味实际上在模板中，你可以使用下面的方式来引用你的组件：
+
+* kebab-case
+* camelCase 或 kebab-case (如果组件已经被定义为 camelCase)
+* kebab-case、camelCase 或 PascalCase (如果组件已经被定义为 PascalCase)
+
+```js
+//组件声明
+components: {
+  'kebab-cased-component': { /* ... */ },
+  camelCasedComponent: { /* ... */ },
+  PascalCasedComponent: { /* ... */ }
+}
+```
+
+一般而言 PascalCase(首字母大写) 是最通用的声明约定而 kebab-case(短横线分割) 是最通用的使用约定。
+
+## 递归组件
+
+组件在它的模板内可以递归地调用自己，不过，只有当它有`name`属性时才可以这么做
+
+```js
+name: 'unique-name-of-my-component'
+```
+
+当用`Vue.component`全局注册了一个组件时，全局的ID会被自动设置成组件的`name`
+
+```js
+Vue.component('unique-name-of-my-component',{
+    //...
+})
+```
+
+如果稍有不慎，递归组件可能导致死循环：
+
+```js
+name: 'stack-overflow',
+template: '<div><stack-overflow></stack-overflow></div>'
+```
+
+上面组件会导致一个“max stack size exceeded”错误，所以要确保递归调用有终止条件 (比如递归调用时使用 `v-if` 并最终解析为 `false`)
+
+## 组件间的循环引用
+
+假设你正在构建一个文件目录树，像在Finde或资源管理器中。你可能有一个`tree-folder`组件：
+
+```html
+<!-- tree-folder -->
+<p>
+  <span>{{ folder.name }}</span>
+  <tree-folder-contents :children="folder.children"/>
+</p>
+```
+
+以及一个`tree-folder-contents`组件
+
+```html
+<!-- tree-folder-contents -->
+<ul>
+  <li v-for="child in children">
+    <tree-folder v-if="child.children" :folder="child"/>
+    <span v-else>{{ child.name }}</span>
+  </li>
+</ul>
+```
+
+当你仔细看时，会发现在渲染树上这两个组件同时为对方的父节点和子节点——这是矛盾的！当使用 `Vue.component` 将这两个组件注册为全局组件的时候，框架会自动为你解决这个矛盾。
+
+但是，如果你使用诸如 `webpack` 或者 `Browserify` 之类的模块化管理工具来 `require/import` 组件的话，就会报错了：
+
+```bash
+Failed to mount component: template or render function not defined.
+```
+
+简单解释下为什么会报错：假设上面两个为A、B组件，模块系统看到它需要A组件，A组件依赖B组件，而B组件又依赖A组件，A组件又是需要B的，循环往复，因为模块系统不知道到底应该先解析哪个，所以会陷入无限循环当中。要解决这个问题，我们需要在其中一个组件中告诉模块化管理系统：A虽然最后会用到B，但是不需要优先导入B。
+
+在我们的例子中，可以选择在`tree-folder`组件中来做这件事，我们知道引起矛盾的子组件是`tree-folder-contents`,所以我们要在组件`tree-folder`的`beforeCreate`生命周期钩子中才去注册组件`tree-folder-contents`
+
+```js
+beforeCreate: function () {
+    this.$options.component.TreeFolderContents = require('./tree-folder-contents.vue').default
+}
+```
+
+这样就解决了循环引用的问题
+
+## 内联模板
+
+如果子组件有`inline-template`特性，组件将把它的内容当做它的模板，而不是把它当做分发内容，这样让模板编写起来更加灵活
+
+```html
+<my-component inline-template>
+    <div>
+        <p>这是模板自身的内容</p>
+        <p>而不是父组件 slot 穿透近来的内容</p>
+    </div>
+</mycomponent>
+```
+
+但是 `inline-template` 让模板的作用域难以理解。使用 `template`选项在组件内定义模板或者在 `.vue`文件中使用 `template` 元素才是最佳实践。
+
+## 对于低开销的静态组件使用`v-once`
+
+尽管在Vue中渲染HTML很快，不过当组件中包含大量的静态内容时，可以考虑使用`v-once`,将渲染结果保存起来，就像这样
+
+```js
+Vue.component('terms-of-service',{
+    template: `\
+    <div v-once>\
+        <h1>Terms of Service</h1>\
+        ...很多静态内容...
+        </div>
+    `
+})
+```
+
+## 过渡&动画
+
+Vue在插入、更新或者移除DOM时，提供多种不同方式的应用过渡效果
+
+包括以下工具：
+
+* 在CSS过渡和动画中自动应用class
+* 可以配合使用第三方的CSS动画库，如`Animate.css`
+* 在过渡钩子函数中使用JavaScript直接操作DOM
+* 可以配合使用第三方JavaScript动画库，如Velocity.js
+
+我们先试着讲进入、离开和列表的过渡，你也可以看下一节的管理过渡状态
+
+## 单元素或组件的过渡
+
+Vue本身提供了`transition`的封装组件，在下列情形当中，可以给任何元素的组件添加entering/leaving过渡状态，如：
+
+* 条件渲染(使用`v-if`)
+* 条件展示(使用`v-show`)
+* 动态组件
+* 组件根节点
+
+这里是一个典型的例子
+
+```html
+<div id="demo">
+  <button v-on:click="show = !show">
+    Toggle
+  </button>
+  <transition name="fade">
+    <p v-if="show">hello</p>
+  </transition>
+</div>
+```
+
+```js
+new Vue({
+  el: '#demo',
+  data: {
+    show: true
+  }
+})
+```
+
+```css
+.fade-enter-active, .fade-leave-active {
+  transition: opacity .5s;
+}
+.fade-enter, .fade-leave-to /* .fade-leave-active below version 2.1.8 */ {
+  opacity: 0;
+}
+```
+
+当插入或删除包含在`transition`组件中的元素时，Vue会做如下处理：
+
+* 自动嗅探目标是否应用了CSS过渡或者动画，如果是，在恰当的时机添加/删除CSS类名
+* 如果过渡组件提供了JavaScript钩子函数，这些钩子函数将在恰当的时机被调用
+* 如果没有找到JavaScript钩子也没有检测到CSS过渡/动画，DOM操作(插入/删除)在下一帧中立即执行(这里是指浏览器逐帧动画机制，而不是Vue的`nextTick`)
+
+## transition相关的类名
+
+在进入/离开的过渡中，会有6个class切换，它们分别是：
+
+* `v-enter`: 定义进入过渡的开始状态，在元素被插入时生效，在下一个帧当中移除
+* `v-enter-active`: 定义过渡的状态。在元素整个过渡过程中作用，在元素被插入时生效，在`transition/animation`完成之后移除，这个类可以用来定义过渡的**过程时间**、**延迟**和**曲线函数**等
+* `v-enter-to`：Vue.js 2.1.8以后，这个类用来定义进入过渡的结束状态，在元素被插入一帧后生效(与此同时，`v-enter`这个类被删除),在`transition/animation`完成之后会被移除
+* `v-leave`: 定义离开过渡的开始状态，在离开过渡被触发时生效，在下一个帧当中被移除
+* `v-leave-active`: 定义过渡的状态，在元素整个过渡过程中作用，在离开过渡被触发后立即生效，在`transition/animation`完成之后移除，这个类可以被用来定义过渡的**过程时间**、**延迟**和**曲线函数**等
+* `v-leave-to`：Vue.js 2.1.8以后，这个类用来定义离开过渡的结束状态，在离开过渡触发一帧后生效(与此同时，`v-leave`这个类被删除),在`transition/animation`完成之后会被移除
+
+对于这些在 `enter/leave`过渡中切换的类名，`v-`是这些类名的前缀，使用`<transition name="my-transition">`则可以重置前缀，比如`v-enter`替换为`my-transition-enter`
+
+`v-enter-active`和`v-leave-active`可以控制进入/离开过渡的不同阶段
+
+## CSS过渡
+
+常用的过渡都是使用 CSS 过渡。
+
+## CSS动画
+
+CSS 动画用法同 CSS 过渡 作用一致，区别是在动画中 `v-enter` 类名在节点插入 DOM 后不会立即删除，而是在 `animationend` 事件触发时删除。
+
+## 自定义过渡类名
+
+我们可以通过以下特性来自定义过渡类名
+
+* `enter-class`
+* `enter-active-class`
+* `enter-to-class`
+* `leave-class`
+* `leave-active-class`
+* `leave-to-class`
+
+它们的优先级高于普通的类名，这对于Vue的过渡系统和其他第三方CSS动画库，如`Animate.css`结合使用十分有用
+
+## 同时使用过渡和动画
+
+Vue为了知道过渡的完成，必须设置相应的事件监听器，它可以是`transitionend`或者`animationend`，这取决于给元素应用的CSS规则(CSS过渡还是CSS动画)，如果你使用其中任何一种,Vue都能够自动识别类型并且设置监听
+
+但是，在一些场景当中，你需要给同一个元素同时设置两种过渡效果，比如`animation`很快的被触发了，而`transition`效果还没结束，在这种情况下，我们就需要使用`type`特性并设置`animation`or`transition`来明确声明你需要Vue监听的类型。
+
+## 显性的过渡持续时间
+
+在很多情况下，Vue可以自动得出过渡效果的完成时机，默认情况下，Vue会等待其在过渡效果中的根元素的第一个`transitionend`事件或者`animationend`事件，然而也可以不这样设定--比如，我们可以拥有一个精心编排的一序列过渡效果，其中一些嵌套的内部元素相比于过渡效果的根元素有延迟或更长的过渡效果
+
+在这样的情况下，你可以用`<transition>`组件上的`duration`属性定制一个显性过渡的持续时间(以毫秒为单位)
+
+```html
+<transition :duration="1000">...</transition>
+```
+
+当然，你也可以定制进入和移出的持续时间
+
+```html
+<transition :duration="{enter: 500,leave: 800}"></transition>
+```
+
+## JavaScript钩子
+
+可以在属性中声明JavaScript钩子：
+
+```html
+<transition
+    v-on:before-enter="beforeEnter"
+    v-on:enter="enter"
+    v-on:after="afterEnter"
+    v-on:enter-cancelled="enterCanceleed"
+
+    v-on:before-leave="beforeLeave"
+    v-on:leave="leave"
+    v-on:after-leave="afterLeave"
+    v-on:leave-cancelled="leaveCancelled"
+>
+    <!-- ... -->
+</transition>
+```
+
+```js
+methods: {
+    // --------
+    // 进入中
+    // --------
+    beforeEnter: function (el) {
+        //...
+    },
+    // done这个回调函数是可选型配置
+    //与CSS结合时使用
+    enter: function (el,done) {
+        //...
+        done()
+    },
+    afterEnter: function (el) {
+        //...
+    },
+    enterCancelled: function (el) {
+        //...
+    }
+
+    // --------
+    // 离开时
+    // --------
+    beforeLeave: function (el) {
+        //...
+    },
+    // done这个回调函数是可选型配置
+    //与CSS结合时使用
+    leave: function (el,done) {
+        //...
+        done()
+    },
+    afterLeave: function (el) {
+        //...
+    },
+    // leaveCancelled 只用于 v-show 中
+    leaveCancelled: function (el) {
+        //...
+    }
+}
+```
+
+这些钩子函数可以结合 CSS `transitions/animations` 使用，也可以单独使用。单独使用时， 在 `enter` 和 `leave` 中，回调函数 `done` 是必须的 。否则，它们会被同步调用，过渡会立即完成。
+
+所以对于只使用JavaScript过渡的元素，给其添加`v-bind:css="false"`,Vue 会跳过 CSS 的检测。这也可以避免过渡过程中 CSS 的影响。
+

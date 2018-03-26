@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Vue插槽分发内容以及作用域插槽</title>
+    <script src="https://cdn.bootcss.com/vue/2.5.13/vue.min.js"></script>
+</head>
+
+<body>
+    <div id="test">
+        <h1>我是父组件标题</h1>
+        <h2 v-bind:title="selfData.id"></h2>
+        <app-layout>
+            <h1 slot="header">这里可能是一个页面标题</h1>
+            <p>主要内容的一个段落。</p>
+            <p>另一个主要段落。</p>
+            <p slot="footer">这里有一些联系信息</p>
+        </app-layout>
+        <h2>测试作用域插槽</h2>
+        <div class="parent">
+            <child-comp>
+                <template slot-scope="props">
+                    <span>这是父级文字</span>
+                    <br>
+                    <span>这是子组件传过来的数据：{{props.text}}</span>
+                </template>
+            </child-comp>
+        </div>
+        <br>
+        <h2>测试自定义列表组件</h2>
+        <div class="container">
+            <awesome-list v-bind:my="selfData">
+                <li slot="item" slot-scope="props" class="mu-fancy-item">{{props.text}}</li>
+            </awesome-list>
+        </div>
+    </div>
+    <script>
+        Vue.component('app-layout', {
+            template: `
+            <div class="container">
+  <header>
+    <slot name="header"></slot>
+  </header>
+  <main>
+    <slot></slot>
+  </main>
+  <footer>
+    <slot name="footer"></slot>
+  </footer>
+</div>
+        `
+        })
+        Vue.component('child-comp', {
+            template: `
+            <div class="child">
+  <slot text="hello from child"></slot>
+</div>
+            `
+        })
+        Vue.component('awesome-list', {
+            template: `
+            <!--
+                <span>{{my.title}}</span>
+            <br>
+             -->
+            <ul>
+                <slot name="item" v-for="item in items" :text="item.text">
+                <!-- 这里写入备用内容 -->
+                </slot>
+            </ul>
+            `,
+            props: ['my'],
+            data: function () {
+                return {
+                    items: [{
+                            id: 1,
+                            text: 'C'
+                        },
+                        {
+                            id: 2,
+                            text: 'D'
+                        }
+                    ]
+                }
+            }
+        })
+        new Vue({
+            el: '#test',
+            data: {
+                selfData: {
+                    id: 1,
+                    title: '父组件数据111112222'
+                }
+            }
+        })
+    </script>
+</body>
+
+</html>
