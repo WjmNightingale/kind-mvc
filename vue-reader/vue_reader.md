@@ -2307,3 +2307,307 @@ methods: {
 
 所以对于只使用JavaScript过渡的元素，给其添加`v-bind:css="false"`,Vue 会跳过 CSS 的检测。这也可以避免过渡过程中 CSS 的影响。
 
+## 初始渲染过渡
+
+可以通过`appear`特性设置节点在初始渲染的过渡
+
+```html
+<transition appear>
+    <!-- -->
+</transition>
+```
+
+同默认的进入/离开过渡一样，同样也可以自定义CSS类名
+
+```html
+<transition
+    appear
+    appear-class="custom-appear-class"
+    appear-to-class="custom-appear-to-class"
+    appear-active-class="custom-appear-active-class"
+>
+    <!-- -->
+</transition>
+```
+
+自定义的JavaScript钩子
+
+```html
+<transition
+    appaer
+    @brfore-appear="customBeforeAppearHook"
+    @appear="customAppearHook"
+    @after-appear="customAfterAppearHook"
+    @appear-cancelled="customAppearCancelledHook"
+>
+<!-- -->
+</transition>
+```
+
+## 多个元素的过渡
+
+我们之后讨论多个组件的过渡，对于原生标签可以使用`v-if/v-else`。最为常见的多标签过渡是一个列表和描述这个列表为空消息的元素
+
+```html
+<transition>
+    <table v-if="items.length > 0">
+        <!-- ... -->
+    </table>
+    <p v-else>Sorry,no items found</p>
+</transition>
+```
+
+值得注意的是，当有相同标签名的元素切换时，需要通过key特性来设置唯一的值来标记以便于Vue能够区分这些同标签名元素，否则Vue为了效率只会替换相同标签内部的内容，所以给`<transition>`组件中的多个元素设置key是一个更好的实践。比如：
+
+```html
+<transition>
+    <button v-if="isEditing" key="save">
+        Save
+    </button>
+    <button v-else key="edit">
+        Edit
+    </button>
+</trnasition>
+```
+
+在一些场景中，也可以通过给同一个元素的`key`特性设置不同的状态来代替`v-if`和`v-else`，上面的例子可以重写为：
+
+```html
+<transition>
+    <buuton :key="isEditing">
+        {{idEditing ? 'Save' : 'Edit'}}
+    </button>
+</transition>
+```
+
+使用多个`v-if`的多个元素的过渡可以重写为绑定了动态属性的单个元素过渡。例如：
+
+```html
+<transition>
+  <button v-if="docState === 'saved'" key="saved">
+    Edit
+  </button>
+  <button v-if="docState === 'edited'" key="edited">
+    Save
+  </button>
+  <button v-if="docState === 'editing'" key="editing">
+    Cancel
+  </button>
+</transition>
+```
+
+上述例子可以重写为：
+
+```html
+<transition>
+    <button v-bind:key="docState">
+        {{ buttonMessage}}
+    </button>
+</transition>
+<script>
+    //...
+    computed: {
+        buttonMessage: function () {
+            switch (this.docState) {
+                case 'saved': return 'Edit'
+                case 'edited': return 'Save'
+                case 'editing': return 'Cancel'
+            }
+        }
+    }
+</script>
+```
+
+## 过渡模式
+
+在`on`按钮和`off`按钮的过渡中，两个按钮都被重新绘制了(重绘),一个离开过渡的时候另一个开始进入过渡，这是`<transition>`的默认行为：进入和离开同时发生
+
+这是元素是绝对定位时位置变化是正常的，不会突然就有一个元素挤到了另一个位置上
+
+但是由于`<transition>`默认行为，如果元素不是彼此绝对定位，那么切换视觉效果就达不到想要的，所以Vue提供了过渡模式：
+
+* `in-out`：新元素进行过渡时，完成之后当前元素过渡离开
+* `out-in`：当前元素进行过渡时，完成之后新元素过渡进入
+
+## 多个组件的过渡
+
+多个组件的过渡简单很多，我们不需要使用`key`特性，我们只需要使用动态组件
+
+```html
+<transition name="component-fade" mode="out-in">
+    <component :is="view"></component>
+</transition>
+```
+
+```js
+new Vue({
+    el: '#transition-components-demo',
+    data: {
+        view: 'v-a'
+    },
+    components: {
+        'v-a': {
+            template: `<div>component A</div>`
+        },
+        'v-b': {
+            template: `<div>component B</div>`
+        }
+    }
+})
+```
+
+## 列表过度
+
+目前为止，关于过渡我们已经讲到：
+
+* 单个节点
+* 同一时间渲染多个节点中的一个
+
+那么Vue怎么同时渲染整个列表呢，比如使用`v-for`？在这样的场景中，需要使用`<transition-group>`这样的组件，在我们深入例子之前，先了解这个组件的基础知识
+
+* 不同于`<transition>`，`<transition-group>`会以一个真实元素呈现：默认为一个`<span>`，你也可以通过`tag`特性来明确你所需要渲染出的真实元素的类型
+* 内部元素总是需要提供唯一的`key`属性值
+
+## 列表的进入/离开过渡
+
+现在让我们由一个简单例子深入，进入和离开的过渡使用之前一样的CSS类名
+
+```html
+<div id="list-demo" class="demo">
+    <button @click="add">Add</button>
+    <button @click="remove">Remove</button>
+    <transition-group name="list" tag="p">
+        <span v-for="item in items" v-bind:key="item" class="list-item">
+            {{item}}
+        </span>
+    </transition-group>
+</div>
+```
+
+```js
+new Vue({
+  el: '#list-demo',
+  data: {
+    items: [1,2,3,4,5,6,7,8,9],
+    nextNum: 10
+  },
+  methods: {
+    randomIndex: function () {
+      return Math.floor(Math.random() * this.items.length)
+    },
+    add: function () {
+      this.items.splice(this.randomIndex(), 0, this.nextNum++)
+    },
+    remove: function () {
+      this.items.splice(this.randomIndex(), 1)
+    },
+  }
+})
+```
+
+```css
+list-item {
+  display: inline-block;
+  margin-right: 10px;
+}
+.list-enter-active, .list-leave-active {
+  transition: all 1s;
+}
+.list-enter, .list-leave-to
+/* .list-leave-active for below version 2.1.8 */ {
+  opacity: 0;
+  transform: translateY(30px);
+}
+```
+
+## 列表的排序过渡
+
+`<transition-group>`组件还有一个特殊之处，不仅可以凭借过度类添加进入/离开动画，还可以改变定位。要使用这个新功能只需要了解新增的`v-move`特性，它会在元素的改变定位的过程中应用。像之前的类名一样，可以通过`name`属性来自定义前缀，也可以通过`move-class`属性手动设置
+
+`v-move`对于设置过渡的切换时机和过渡曲线非常有用，比如：
+
+## 列表的交错过渡
+
+通过 data 属性与 JavaScript 通信 ，就可以实现列表的交错过渡：
+
+## 可复用的过渡
+
+过渡可以通过Vue的组件系统实现复用，要创建一个可复用的过渡组件，你需要做的就是将`<transition>`或者`<transition-group>`作为根组件，然后将任何子组件放置在其中就可以了。
+
+使用`template`的简单例子
+
+```js
+Vue.component('my-special-transition',{
+    template: `\
+    <transition\
+        name="very-special-transition"\
+        mode="out-in"\
+        @before-enter="beforEnter"\
+        @after-enter="afterEnter"\
+    >\
+        <slot></slot>\
+    </transition>\
+    `,
+    methods: {
+        beforeEnter: function (el) {
+            //...
+        },
+        afterEnter: function (el) {
+            //...
+        }
+    }
+})
+```
+
+函数组件更适合完成这样的复用过渡组件
+
+```js
+Vue.component('my-special-transition', {
+    functional: true,
+    render: function (createElement,context) {
+        var data= {
+            props: {
+                name: 'very-special-transition',
+                mode: 'out-in'
+            },
+            on: {
+                beforEnter: function (el) {
+                    //...
+                },
+                afterEnter: function (el) {
+                    //...
+                }
+            }
+        }
+        return createElement('transition',data,context.children)
+    }
+})
+```
+
+## 动态过渡
+
+在 Vue 中即使是过渡也是数据驱动的！动态过渡最基本的例子是通过 `name` 特性来绑定动态值。
+
+```html
+<transition v-bind:name="transitionName"></transition>
+```
+
+当你想用 Vue 的过渡系统来定义的 CSS 过渡/动画 在不同过渡间切换会非常有用。
+
+所有的过渡特性都是动态绑定。它不仅是简单的特性，通过事件的钩子函数方法，可以在获取到相应上下文数据。这意味着，可以根据组件的状态通过 JavaScript 过渡设置不同的过渡效果。
+
+## 状态过渡
+
+Vue的过渡系统提供了非常多简单的方法设置进入、离开和列表的动画。那么对于数据元素本身的动效呢，比如：
+
+* 数字和运算
+* 颜色的显示
+* SVG节点的位置
+* 元素大小和其他属性
+
+所有的原始数字都被事先存储起来，可以直接转换到数字。做到这一步，我们就可以结合Vue的响应式事件和组件系统，使用第三方库来实现元素切换的过渡状态
+
+## 状态动画与侦听器
+
+通过侦听器我们能监听到任何数值属性的数值更新，这听起来可能很抽象，所以让我们先来看看使用GreenSork的例子：
+

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Vue状态动画与侦听器</title>
+    <script src="https://cdn.bootcss.com/vue/2.5.13/vue.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tween.js@16.3.4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/color-js@1.0.3"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/1.20.3/TweenMax.min.js"></script>
+    <style>
+    .preview {
+        display: inline-block;
+        background: red;
+        width: 50px;
+        height: 50px;
+    }
+    </style>
+</head>
+
+<body>
+    <div id="test">
+        <div class="number">
+            <input type="number" step="20" v-model.number="number">
+            <p>{{ animatedNumber}}</p>
+        </div>
+        <div class="color">
+            <input type="text" v-model="colorQuery" @keyup.enter="updateColor" placeholder="请输入一个颜色">
+            <button @click="updateColor">更新状态</button>
+            <p>Priview:</p>
+            <span v-bind:style="{backgroundColor: tweenedCSSColor}" class="preview">
+            </span>
+            <p>{{tweenedCSSColor}}</p>
+        </div>
+    </div>
+</body>
+<script>
+    var Color = net.brehaut.Color
+    console.log(new Color('red').toRGB())
+    var vm = new Vue({
+        el: '#test',
+        data: {
+            number: 0,
+            tweenedNumber: 0,
+            colorQuery: '',
+            color: {
+                red: 0,
+                green: 0,
+                blue: 0,
+                alpha: 1
+            },
+            tweenedColor: {}
+        },
+        created: function () {
+            this.tweenedColor = Object.assign({},this.color)
+        },
+        computed: {
+            animatedNumber: function () {
+                return this.tweenedNumber.toFixed(0)
+            },
+            tweenedCSSColor: function () {
+                return new Color({
+                    red: this.color.red,
+                    green: this.color.green,
+                    blue: this.color.blue,
+                    alpha: this.color.alpha
+                }).toCSS()
+            }
+        },
+        watch: {
+            number: function (newValue) {
+                TweenLite.to(this.$data, 0.5, {
+                    tweenedNumber: newValue
+                })
+            },color: function () {
+                function animate () {
+                    if (TWEEN.update) {
+                        requestAnimationFrame(animate)
+                    }
+                }
+                new TWEEN.Tween(this.tweenedColor)
+                         .to(this.color,750)
+                         .start()
+                
+                animate()
+            }
+        },
+        methods: {
+            updateColor: function () {
+                console.log(this.colorQuery)
+                this.color = new Color(this.colorQuery).toRGB()
+                console.log('颜色为'+this.color)
+                this.colorQuery = ''
+            }
+        }
+    })
+</script>
+
+</html>

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Vue组件过渡</title>
+    <script src="https://cdn.bootcss.com/vue/2.5.13/vue.min.js"></script>
+    <style>
+    .component-fade-enter-active,.component-fade-leave-active {
+        transition: all 1s ease;
+    }
+    .component-fade-enter,.component-fade-leave-to {
+        opacity: 0;
+    }
+    </style>
+</head>
+
+<body>
+    <div id="test">
+        <button @click=" changeA">A</button>
+        <button @click=" changeB">B</button>
+        <transition name="component-fade" mode="out-in">
+            <component :is="view" mode="out-in"></component>
+        </transition>
+    </div>
+    <script>
+    var vm = new Vue({
+        el: '#test',
+        data: {
+            view: 'A',
+        },
+        components: {
+            'A': {
+                template: `<div>这是A组件</div>`
+            },
+            'B': {
+                template: `<div>这是B组件</div>`
+            }
+        },
+        methods: {
+            changeA: function () {
+                this.view = 'A'
+            },
+            changeB: function () {
+                this.view = 'B'
+            }
+        }
+    })
+    </script>
+</body>
+
+</html>

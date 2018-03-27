@@ -13,7 +13,49 @@
 </head>
 
 <body>
-
+    <div id="test">
+        <button @click="show = !show">Toggle show</button>
+        <transition
+            @before-enter="beforeEnter"
+            @enter="enter"
+            @leave="leave"
+            :css="false"
+        >
+            <p v-if="show">
+                Demo
+            </p>
+        </transition>
+    </div>
+    <script>
+        console.log(Velocity)
+    var vm = new Vue({
+        el: '#test',
+        data: {
+            show: false,
+        },
+        methods: {
+            beforeEnter: function (el) {
+                console.log(el)
+                el.style.opacity = 0
+                el.style.transformOrigin = 'left'
+            },
+            enter: function (el,done) {
+                Velocity(el,{opacity: 1,fontSize: '1.4em'},{duration: 300})
+                Velocity(el,{fontSize: '1em'},{complete: done})
+            },
+            leave: function (el,done) {
+                Velocity(el,{translateX: '15px',rotateZ: '50deg'},{duration: 2000})
+                Velocity(el,{rotateZ: '100deg'},{loop: 6})
+                Velocity(el,{
+                    rotateZ: '40deg',
+                    translateX: '30px',
+                    translateY: '30px',
+                    opacity: 0
+                },{complete: done})
+            }
+        }
+    })
+    </script>
 </body>
 
 </html>
