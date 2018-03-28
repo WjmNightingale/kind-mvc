@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Vue--mixins 混入对象的使用</title>
+    <script src="https://cdn.bootcss.com/vue/2.5.13/vue.min.js"></script>
+</head>
+
+<body>
+    <div id="test">
+            mixin对象和组件的数据内容起冲突时，展示：<p>{{message}}</p>
+    </div>
+</body>
+<script>
+    var mixin = {
+        data: function () {
+            return {
+                message: 'mixin数据',
+                foo: 'abc'
+            }
+        },
+        created: function () {
+            console.log('这是混入对象的钩子')
+        }
+    }
+    new Vue({
+        el: '#test',
+        mixins: [mixin],
+        data: function () {
+            return {
+                message: '组件的数据',
+                bar: 'def'
+            }
+        },
+        created: function () {
+            console.log('这里是组件钩子')
+        }
+    })
+</script>
+
+</html>
