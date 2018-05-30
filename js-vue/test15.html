@@ -11,10 +11,26 @@
 
 <body>
     <div id="test">
-            mixin对象和组件的数据内容起冲突时，展示：<p>{{message}}</p>
-    </div>
+        mixin对象和组件的数据内容起冲突时，展示：
+        <p>{{message}}</p>
+        <div class="demo">
+            <input type="text" v-focus>
+        </div>
+    <div v-demo:foo.a.b="directivesName"></div>
 </body>
 <script>
+    Vue.directive('demo', {
+        bind: function (el, binding, vnode) {
+            var s = JSON.stringify
+            el.innerHTML =
+                `name:` + s(binding.name) + `<br>` +
+                'value: ' + s(binding.value) + '<br>' +
+                'expression: ' + s(binding.expression) + '<br>' +
+                'argument: ' + s(binding.arg) + '<br>' +
+                'modifiers: ' + s(binding.modifiers) + '<br>' +
+                'vnode keys: ' + Object.keys(vnode).join(', ')
+        }
+    })
     var mixin = {
         data: function () {
             return {
@@ -29,10 +45,18 @@
     new Vue({
         el: '#test',
         mixins: [mixin],
+        directives: {
+            focus: {
+                inserted: function (el) {
+                    el.focus()
+                }
+            }
+        },
         data: function () {
             return {
                 message: '组件的数据',
-                bar: 'def'
+                bar: 'def',
+                directivesName: 'Hello,directive'
             }
         },
         created: function () {

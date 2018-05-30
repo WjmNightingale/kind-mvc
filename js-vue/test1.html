@@ -1,3 +1,4 @@
+template
 <!DOCTYPE html>
 <html lang="en">
 
@@ -14,73 +15,76 @@
 
 <body>
     <div id="app">
-        <div class="testAjax">
-            <p>Ask a yes/no question
-                <input v-model="question">
-            </p>
-            <p>{{answer}}</p>
-        </div>
-        fullName:{{fullName}}
-        <button v-on:click="modifyFirst">firstName</button>
-        <button v-on:click="modifyLast">lastName</button>
-        <ol>
-            <h1 v-if="isSeen">这是大标题</h1>
-            p
-            <p>Origin：{{message}}</p>
-            <p>Computed: {{computedReverseMessage}}</p>
-            <p v-bind:style="{color: activeColor,'background-color': bgcColor}">测试内联style</p>
-            <div v-bind:style="styleObject">测试style对象</div>
-            <h2 v-bind:id="dynamicId"></h2>
-            <button v-bind:disabled="isButtonDisabled">测试disabled属性是否存在</button>
-            <button v-on:click="reverseMessage">点击一下反转message</button>
-
-            <todo-item v-for="item in test2" v-bind:my="item" v-bind:key="item.id">
-            </todo-item>
-
-            
-            <p>Using v-html directive:
-                <span v-html="rawHtml"></span>
-            </p>
-        </ol>
-        <div id="item-reuse">
-            <h6>以下的label和input渲染时会复用</h6>
-            <template v-if="loginType === 'username' ">
-                <label for="">Username</label>
-                <input type="text" placeholder="Enter your username">
-            </template>
-            <template v-else>
-                <label for="">Email</label>
-                <input type="text" placeholder="Enter your Email address">
-            </template>
-            <h6>以下的input会被重新渲染，不会被复用，因为增加一个唯一值的key</h6>
-            <template v-if="loginType === 'username'">
-                <label>Username</label>
-                <input placeholder="Enter your username" key="username-input">
-            </template>
-            <template v-else>
-                <label>Email</label>
-                <input placeholder="Enter your email address" key="email-input">
-            </template>
-            <button @click="changeLoginType">Toggle Login Type</button>
-        </div>
-        <div id="test-for">
-            <h6>测试列表渲染</h6>
-            <ul>
-                <li v-for="(_,index) in test1">第{{index}}元素{{_.text}}</li>
-            </ul>
-            <ul>
-                <li v-for="(_,index) of test2">{{_.text}}</li>
-            </ul>
-        </div>
-        <div id="test-template-vfor">
-            <h6>测试v-for搭配template</h6>
-            <ul>
-                <template v-for="item in test1">
-                    <li>{{item.text}}</li>
-                    <li class="divdider">100001</li>
-                </template>
-            </ul>
-        </div>
+            <p>{{rawHtml}}</p>
+            <div class="testAjax">
+                    <h1>标题</h1>
+                   
+                    <p>Ask a yes/no question
+                        <input v-model="question">
+                    </p>
+                    <p>{{answer}}</p>
+                </div>
+                fullName:{{fullName}}
+                <button v-on:click="modifyFirst">firstName</button>
+                <button v-on:click="modifyLast">lastName</button>
+                <ol>
+                    <h1 v-if="isSeen">这是大标题</h1>
+                    p
+                    <p>Origin：{{message}}</p>
+                    <p>Computed: {{computedReverseMessage}}</p>
+                    <p v-bind:style="{color: activeColor,'background-color': bgcColor}">测试内联style</p>
+                    <div v-bind:style="styleObject">测试style对象</div>
+                    <h2 v-bind:id="dynamicId"></h2>
+                    <button v-bind:disabled="isButtonDisabled">测试disabled属性是否存在</button>
+                    <button v-on:click="reverseMessage">点击一下反转message</button>
+        
+                    <todo-item v-for="item in test2" v-bind:my="item" v-bind:key="item.id">
+                    </todo-item>
+        
+        
+                    <p>Using v-html directive:
+                        <span v-html="rawHtml"></span>
+                    </p>
+                </ol>
+                <div id="item-reuse">
+                    <h6>以下的label和input渲染时会复用</h6>
+                    <template v-if="loginType === 'username' ">
+                        <label for="">Username</label>
+                        <input type="text" placeholder="Enter your username">
+                    </template>
+                    <template v-else>
+                        <label for="">Email</label>
+                        <input type="text" placeholder="Enter your Email address">
+                    </template>
+                    <h6>以下的input会被重新渲染，不会被复用，因为增加一个唯一值的key</h6>
+                    <template v-if="loginType === 'username'">
+                        <label>Username</label>
+                        <input placeholder="Enter your username" key="username-input">
+                    </template>
+                    <template v-else>
+                        <label>Email</label>
+                        <input placeholder="Enter your email address" key="email-input">
+                    </template>
+                    <button @click="changeLoginType">Toggle Login Type</button>
+                </div>
+                <div id="test-for">
+                    <h6>测试列表渲染</h6>
+                    <ul>
+                        <li v-for="(_,index) in test1">第{{index}}元素{{_.text}}</li>
+                    </ul>
+                    <ul>
+                        <li v-for="(_,index) of test2">{{_.text}}</li>
+                    </ul>
+                </div>
+                <div id="test-template-vfor">
+                    <h6>测试v-for搭配template</h6>
+                    <ul>
+                        <template v-for="item in test1">
+                            <li>{{item.text}}</li>
+                            <li class="divdider">100001</li>
+                        </template>
+                    </ul>
+                </div>
     </div>
     <script>
         //v-bind: my 用来载入数据 这里的my即是props中定义的某个prop
@@ -95,6 +99,7 @@
         var app = new Vue({
             el: '#app',
             data: {
+                rawHtml: 'IS',
                 question: '',
                 answer: 'I cannot give you an answer until you ask a question!',
                 isSeen: true,
@@ -209,8 +214,19 @@
 
 
 <div>
-        <h3>v-on:click.prevent.self,会阻止所有点击事件</h3>
-        <div v-on:click.prevent.self style="width:50px;height:50px;background-color:red">点击div1
-            <button v-on:click=="isClick1($event)">点击button1</button>
-        </div>
+    <h3>v-on:click.prevent.self,会阻止所有点击事件</h3>
+    <div v-on:click.prevent.self style="width:50px;height:50px;background-color:red">点击div1
+        <button v-on:click=="isClick1($event)">点击button1</button>
     </div>
+</div>
+
+
+
+
+
+
+import Vue from 'vue/dist/vue.js' Vue.component('todo-item', { // 'todo-item'为全局注册的组件名 props: ['todoList'], //父组件向子组件下发数据时，使用props，'todo-data'表示要下发的数据的标识符
+template: '
+<li>{{todoList.text}}</li>' }) var vm = new Vue({ el: '#app', data: { message: 'Vue is nice!', todoItems: [ { id: 1, text: 'React'
+}, { id: 2, text: 'Vue' }, { id: 3, text: 'Angular' } ] }, methods: { changeMessage: function () { this.message = this.message.split('').reverse().join('')
+} } })
