@@ -103,7 +103,23 @@
                 count2: 99,
                 name: 'test',
                 age: 24,
-                address: '测试地址'
+                address: '测试地址',
+                todos: [
+                    {
+                        id: 1,
+                        text: '任务001',
+                        done: true
+                    },{
+                        id: 2,
+                        text: '任务002',
+                        done: false
+                    }
+                ]
+            },
+            getters: {
+                doneTodos: state => {
+                    return state.todos.filter(todo => todo.done).length
+                }
             },
             mutations: {
                 increment: (state) => {

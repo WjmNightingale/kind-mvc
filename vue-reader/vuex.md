@@ -161,3 +161,212 @@ computed: {
 ```
 
 使用 Vuex 并不意味着你需要将所有的状态放入 Vuex。虽然将所有的状态放到 Vuex 会使状态变化更显式和易调试，但也会使代码变得冗长和不直观。如果有些状态严格属于单个组件，最好还是作为组件的局部状态。你应该根据你的应用开发需要进行权衡和确定。
+
+## Getter
+
+有的时候我们需要从 store 中派生一些状态，比如对列表进行过滤并计算：
+
+```js
+computed: {
+    doneTodosCount() {
+        return this.$store.state.todos.filter(todo => todo.done).length
+    }
+}
+```
+
+如果有多个组件需要用到这个属性，我们要么复制这个函数，获取抽取一个共享函数然后在需要的地方引入--无论是哪种方式都不够理想
+
+Vuex允许我们在 store 中定义`getter`（可以认为是store的计算属性）。就像计算属性一样，`getter`的返回值会根据它的依赖缓存起来，且只有当它的依赖值发生了改变的时候才会重新计算。
+
+Getter 接受 state 作为它的第一个参数
+
+```js
+const store = new Vuex.Store({
+  state: {
+    todos: [
+      { id: 1, text: '...', done: true },
+      { id: 2, text: '...', done: false }
+    ]
+  },
+  getters: {
+    doneTodos: state => {
+      return state.todos.filter(todo => todo.done)
+    }
+  }
+})
+```
+
+Getter 会暴露为 `store.getter`对象，开发者可以以属性的形式访问这些值
+
+```js
+store.getters.doneTodos // -> [{ id: 1, text: '...', done: true }]```
+```
+
+Getter 也接受 其他 getter 作为第二个参数
+
+```js
+getters: {
+    // ...
+    doneTodosCount: (state,getters) => {
+        return getters.doneTodos.length
+    }
+}
+store.getters.doneTodosCount
+```
+
+我们很容易在组件中使用到 getters对象中的属性
+
+```js
+computed: {
+    doneTodosCount() {
+        return this.$store.getters.doneTodosCount
+    }
+}
+```
+
+注意，getter 在通过属性访问时是作为 Vue 的响应式系统的一部分缓存其中的。
+
+除了以对象属性访问 getter 外，开发者也可以让 getter 返回一个函数，来实现给 getter 传参，在开发者对 store 里的数组进行查询时非常有效：
+
+```js
+getters: {
+    // ...
+    getTodoById: (state) => {
+        return (id) => {
+            return state.todos.find(todo => todo.id === id)
+        }
+    }
+}
+
+store.getters.getTodoById(2) // -> { id: 2, text: '...', done: false }
+```
+
+注意，getter 在通过方法访问时，每次都会去进行调用，而不会取缓存结果
+
+## mapGetters 辅助函数
+
+类比`mapState`将 store 中的 state 映射到组件的局部计算属性，`mapGetter`则是将 store 中的 getter 映射到 组件的局部计算属性
+
+```js
+import {mapGetters} form 'vuex'
+
+export default {
+    // ...
+    computed: {
+        // 使用对象展开运算符将 getter 混入 computed 对象中
+        ...mapGetters([
+            'doneTodosCount',
+            'anotherGetter',
+            // ...
+        ])
+    }
+}
+```
+
+如果你想将一个 getter 属性另取一个名字，使用对象形式：
+
+```js
+mapGetters({
+    //  把 `this.doneCount` 映射为 `this.$store.getters.doneTodosCount`
+    doneCount: 'doneTodosCount'
+})
+```
+
+## Mutation
+
+更改Vuex中的store的状态的唯一方法就是，提交mutation。Vuex中的mutation非常类似于事件，每个mutation都有一个字符串的事件类型`type`和一个回调函数`handler`。这个回调函数就是我们实际进行状态更改的地方，并且它会接受state作为第一个参数：
+
+```js
+const store = new Vuex.store({
+    state: {
+        count: 1
+    },
+    mutations: {
+        increment(state) {
+            // 变更状态
+            state.count++
+        }
+    }
+})
+```
+
+开发者不能直接调用一个`mutation handler`,这个选项更像是事件注册：触发一个类型为“increment”的mutation时，调用此处理函数变更状态。要唤醒一个“mutation handler”，需要以相应的type调用store.commit方法：
+
+```js
+store.commit('increment')
+```
+
+开发者也可以在`store.commit`传入额外的参数，即mutation的载荷（payload）
+
+```js
+// ...
+mutations: {
+    increment(state,n) {
+        state.count += n
+    }
+}
+store.commit('increment',10)
+```
+
+在大多数情况下，载荷应该是一个对象，这样可以包含多个字段记录的mutation会更加易读
+
+```js
+// ...
+mutations: {
+    increment(state,payload) {
+        state.count += payload.amount
+    }
+}
+store.commit('increment',{
+    amount: 10
+})
+// 对象风格方式提交commit
+store.commit({
+    type: 'increment',
+    amount: 10
+})
+```
+
+## Mutation 遵循 Vue 的响应规则
+
+既然Vuex中的store是响应式的，那么当我们变更状态时，监视状态的 Vue 组件也会自动更新。这也意味着 Vuex 中的 mutation 也需要与使用 Vue 一样遵守一些注意事项：
+
+1. 最好提前在你的 store 中初始化好所有所需属性。
+2. 当需要在store对象上添加新属性时，你应该
+    * 使用 `Vue.set(obj,'newProp',123)`
+    * 以新对象代替旧对象 `state.obj = {...state.obj,newProp:123}`
+
+在实际开发中，使用常量替代mutation的事件类型，是各种 Flux 实现中是很常见的模式。这样可以使 linter 之类的工具发挥作用，同时把这些常量放在单独的文件中可以让你的代码合作者对整个 app 包含的 mutation 一目了然：
+
+```js
+// mutation-type.js
+export const SOME_MUTATION = 'SOME_MUTATION'
+
+// store.js
+const store = new Vuex.Store({
+    state: {...},
+    mutations: {
+        // 我们可以使用 ES2015 风格的计算属性命名功能来使用一个常量作为函数名
+        [SOME_MUTATION](state) {
+            // mutate state
+        }
+    }
+})
+```
+
+## Mutation 其他细节
+
+一条重要的原则就是要记住 mutation 必须是同步函数。为什么呢？参考以下例子：
+
+```js
+mutations: {
+    someMutation(state) {
+        api.callAsyncMethod(() => {
+            state.count++
+        })
+    }
+}
+```
+
+现在想象，我们正在 debug 一个 app 并且观察 devtool 中的 mutation 日志。每一条 mutation 被记录，devtools 都需要捕捉到前一状态和后一状态的快照。然而，在上面的例子中 mutation 中的异步函数中的回调让这不可能完成：因为当 mutation 触发的时候，回调函数还没有被调用，devtools 不知道什么时候回调函数实际上被调用——实质上任何在回调函数中进行的状态的改变都是不可追踪的。
+
