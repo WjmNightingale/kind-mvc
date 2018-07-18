@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <script src="https://cdn.bootcss.com/vue/2.5.13/vue.min.js"></script>
+    <script src="https://cdn.bootcss.com/vuex/3.0.1/vuex.min.js"></script>
+    <script src="https://cdn.bootcss.com/vue-router/3.0.1/vue-router.min.js"></script>
+    <title>状态管理</title>
+</head>
+
+<body>
+    <div id="app">
+        <counter1></counter1>
+        <counter2></counter2>
+        <counter3></counter3>
+    </div>
+    <script>
+        console.log(Vuex.mapState)
+        const counter1 = {
+            template: `
+            <div>
+                <p>
+                    counter1
+                    <span style="color: red;">{{count1}}</span>
+                </p>
+                <button @click="increment1">+</button>
+                <button @click="decrement1">-</button>
+            </div>
+            `,
+            computed: {
+                count1() {
+                    return store.state.count1
+                }
+            },
+            methods: {
+                increment1() {
+                    console.log('increment事件')
+                    console.log(store)
+                    store.commit('increment1')
+                },
+                decrement1() {
+                    store.commit('decrement1')
+                }
+            }
+        }
+        const counter2 = {
+            created() {
+                // 组件实例化
+                console.log('组件实例化')
+            },
+            template: `
+            <div>
+                <p>
+                    counter2
+                    <span style="color: blue;">{{count2}}</span>
+                </p>
+                <button @click="increment2">加</button>
+                <button @click="decrement2">减</button>
+            </div>
+            `,
+            computed: {
+                count2() {
+                    return store.state.count2
+                }
+            },
+            methods: {
+                increment2() {
+                    store.commit('increment2')
+                },
+                decrement2() {
+                    store.commit('decrement2')
+                }
+            }
+        }
+        const counter3 = {
+            template: `
+            <div>
+                <span>{{localComputed}}--{{count}}</span>
+                <span style="color: red">{{name}}</span>
+                <span style="color: green">{{age}}</span>
+                <span style="color: blue">{{address}}</span>
+            </div>
+            `,
+            computed: {
+                localComputed() {
+                    return '我是本地变量值'
+                },
+                ...Vuex.mapState([
+                    'count',
+                    'name',
+                    'age',
+                    'address'
+                ])
+            }
+        }
+        const store = new Vuex.Store({
+            state: {
+                count: 0,
+                count1: -99,
+                count2: 99,
+                name: 'test',
+                age: 24,
+                address: '测试地址'
+            },
+            mutations: {
+                increment: (state) => {
+                    console.log('被调用的动作')
+                    console.log(state)
+                    state.count++
+                },
+                decrement: state => state.count--,
+                increment1: (state) => {
+                    console.log('被调用的动作')
+                    console.log(state)
+                    state.count1++
+                },
+                decrement1: state => state.count1--,
+                increment2: (state) => {
+                    console.log('被调用的动作')
+                    console.log(state)
+                    state.count2++
+                },
+                decrement2: state => state.count2--
+            }
+        })
+        const app = new Vue({
+            // 挂载点
+            el: '#app',
+            // vuex
+            store,
+            // 组件
+            components: {
+                counter1,
+                counter2,
+                counter3
+            },
+            // state
+            computed: {
+                count() {
+                    return store.state.count
+                }
+            },
+            // action
+            methods: {
+                increment() {
+                    store.commit('increment')
+                    console.log(store.state)
+                },
+                decrement() {
+                    store.commit('decrement')
+                    console.log(store.state)
+                }
+            }
+        })
+    </script>
+</body>
+
+</html>

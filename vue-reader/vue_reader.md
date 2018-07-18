@@ -14,7 +14,7 @@ Vue.js的核心是允许一个允许采用简洁的模版语法来声明式地�
 
 当一个vue实例被创建时，它向Vue的响应式系统中加入了其data对象中能找到的所有属性，当这些属性的值发生改变时，视图就会产生“响应”,即匹配更新为新的值。
 
-值得注意的是，只有当实例被创建时的data中存在的属性才是响应的，也就是如果一开始，你所需要的某些为空或者不存在，你设置一些初始值。
+值得注意的是，只有当实例被创建时的data中存在的属性才是响应的，也就是如果一开始，你所需要的某些为空或者不存在，你需要设置一些初始值。
 
 除了数据属性，Vue实例还提供了某些实例属性和方法，它们都有前缀`$`，方便和用户自定义的属性区分开来,例如：
 
@@ -46,6 +46,7 @@ new Vue({
     },
     created: function() {
         //此处的this指向vm实例
+        // Your payment reference ID is b154873489
         console.log('a is:' + this.test) // a is 1
     }
 })
@@ -78,7 +79,7 @@ Vue.js使用了基于HTML的模板语法，允许开发者声明式地将DOM绑�
 2. for example:
 
 ```js
-//html: <p>Using v-html directive: <span v-html="rawHtml"></span></p>
+//  html: <p>Using v-html directive: <span v-html="rawHtml"></span></p>
 var vm = new Vue({
     data: {
             ramHtml: '<span style="color:red">red</span>'
@@ -93,7 +94,7 @@ var vm = new Vue({
 
 ## JavaScript表达式
 
-Vue.js支持JavaScript表达式,如`<div v-bind:id="'list-'+id"></div>`,or
+Vue.js 支持 JavaScript 表达式,如`<div v-bind:id="'list-'+id"></div>`,or
 
 ```js
 {{number + 1}}
@@ -111,7 +112,7 @@ Vue.js支持JavaScript表达式,如`<div v-bind:id="'list-'+id"></div>`,or
 
 ### 指令参数
 
-一些指令能够接收一个参数，在指令名称冒号后的位置上，举个栗子，`v-bind`指令可用于响应式地更新HTML属性==>`<a v-bind:href=""url>...</a>`
+一些指令能够接收一个参数，在指令名称冒号后的位置上，举个栗子，`v-bind`指令可用于响应式地更新HTML属性==>`<a v-bind:href="url">...</a>`
 
 `v-on`指令，则用来监听DOM事件,冒号后的参数表示所监听的事件名==》`<a v-on:click="doSomething">...</a>`
 
@@ -153,7 +154,7 @@ var vm = new Vue({
     },
     computed: {
         computedReverseMessage: function() {
-            //this指向vm实例
+            // this 指向 vm 实例
             return this.message.split('').reverse().join('')
         }
     }
@@ -265,7 +266,7 @@ var watch = new Vue({
         answer: 'I cannot give you an answer until you ask a question!'
     },
     watch: {
-        //如果'question'发生改变,这个函数就会运行
+        //如果 'question' 发生改变,这个函数就会运行
         question: function(newQuestion,oldQuestion) {
             this.answer = 'Waiting for you to stop typing...'
             this.getAnswer()
@@ -490,7 +491,7 @@ Vue.js另一个用于条件展示元素的选项是`v-show`命令，用法：`<h
 
 `v-if`是真正的条件来渲染，因为它会确保在切换过程中条件块内的事件监听器和子组件适当地被销毁和重建。
 
-`v-if`也是惰性的，如果在初始渲染条件为假时，则什么也不做，直到条件第一次变为真时，才会开始渲染条件块；而`v-show`则是不管初始条件是什么，元素总会被渲染，并且知识简单地基于css进行切换。
+`v-if`也是惰性的，如果在初始渲染条件为假时，则什么也不做，直到条件第一次变为真时，才会开始渲染条件块；而`v-show`则是不管初始条件是什么，元素总会被渲染，并且只是简单地基于css进行切换。
 
 一般来说，`v-if`有着更高的切换开销，而`v-show`有着更高的渲染开销，所以对于需要频繁切换的应选用`v-show`，而初始渲染开销较大的而运行时条件很少改变的，应该选用`v-if`
 
@@ -777,7 +778,7 @@ methods: {
 </div>
 ```
 
-### v-for搭配template使用
+### v-for 搭配 template 使用
 
 类似于`v-if`，你可以利用带有`v-for`的`<template>`来渲染多个元素，此时template会被循环渲染，比如：
 
@@ -796,7 +797,7 @@ methods: {
 
 ```html
 <ul>
-    <li v-for="todo in todos" v-if="!todo.isComplete">
+    <li v-for="todo in todos " v-if="!todo.isComplete">
 </ul>
 ```
 
@@ -858,15 +859,15 @@ Vue.component('todo-item',{
     template: `\
     <li>\
     {{title}}\
-    <button @:click="$emit(\'remove'\)">X</button>\
+    <button @click="$emit(\'remove'\)">X</button>\
+    </li>
     `,
     props: ['title']
 })
 var vm = new Vue({
     el: '#todo-list-example',
     data: {
-        todos: [
-            newTodoText: ''
+        todoList: [
             {
                 id: 1,
                 title: 'test1'
@@ -880,12 +881,13 @@ var vm = new Vue({
                 title: 'test3'
             }
         ],
-        nextTodoId: 4
+        newTodoText: ''
+        lastTodoId: this.todoList.length
     },
     methods: {
         addNewTodo: function() {
             this.todos.push({
-                id: this.nextTodoId++,
+                id: this.lastTodoId++,
                 title: this.newTodoTitle
             })
             this.newTodoTitle = ''
@@ -901,7 +903,7 @@ var vm = new Vue({
 ```html
 <div id="test">
     <button v-on:click="counter += 1">Add 1</button>
-    <p>The button above has benn clicked{{counter}}times</p>
+    <p>The button above has been clicked{{counter}}times</p>
 </div>
 <script>
     var vm = new Vue({
@@ -1328,7 +1330,7 @@ Vue.component('child',{
     //声明 props
     props: ['message'],
     //就像data一样，prop也可以在模板中使用
-    //同样也可以在vm实例通过this.message来使用
+    //同样也可以在 vm 实例通过 this.message 来使用
     template: `<span>{{message}}</span>`
 })
 ```
@@ -1391,7 +1393,7 @@ todo: {
 然后
 
 ```html
-<todo-item v-bind="todo"></todo-item>
+<todo-item v-bind:="todo"></todo-item>
 ```
 
 这个效果等价于
