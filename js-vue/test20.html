@@ -58,7 +58,7 @@
                     <span style="color: blue;">{{count2}}</span>
                 </p>
                 <button @click="increment2">加</button>
-                <button @click="decrement2">减</button>
+                <button @click="add">减</button>
             </div>
             `,
             computed: {
@@ -67,12 +67,22 @@
                 }
             },
             methods: {
-                increment2() {
-                    store.commit('increment2')
-                },
-                decrement2() {
-                    store.commit('decrement2')
-                }
+                // increment2() {
+                //     store.commit('increment2')
+                // },
+                // decrement2() {
+                //     store.commit('decrement2')
+                // }
+                ...Vuex.mapMutations([
+                    // this.increment2() => this.$store.commit('increment2')
+                    'increment2'
+                    // this.decrement2() => this.$store.commit('decrement2')
+                    //'decrement2'
+                ]),
+                ...Vuex.mapMutations({
+                    // this.add() => this.$store.commit('decrement2')
+                    add: 'decrement2'
+                })
             }
         }
         const counter3 = {

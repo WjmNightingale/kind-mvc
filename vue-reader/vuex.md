@@ -370,3 +370,284 @@ mutations: {
 
 现在想象，我们正在 debug 一个 app 并且观察 devtool 中的 mutation 日志。每一条 mutation 被记录，devtools 都需要捕捉到前一状态和后一状态的快照。然而，在上面的例子中 mutation 中的异步函数中的回调让这不可能完成：因为当 mutation 触发的时候，回调函数还没有被调用，devtools 不知道什么时候回调函数实际上被调用——实质上任何在回调函数中进行的状态的改变都是不可追踪的。
 
+## 在组件中提交 Mutation
+
+你可以在组件中使用`this.$store.commit('xxx')`提交mutation，或者使用`mapMutations`辅助函数将组件中的methods映射为`store.commit`调用（这个需要在根节点注入 store）
+
+```js
+import {mapMutations} from 'vuex'
+export default {
+    // ...
+    methods: {
+        ...mapMutations([
+            // 将`this.increment()`映射为`this.$store.commit('increment')`
+            'increment',
+            // `mapMutations`映射的mutation也支持载荷：
+            // 比如将`this.incrementBy(amount)`映射为`this.$store.commit({type: incrementBy,amount: amount})`
+            'incrementBy'
+        ]),
+        ...mapMutations({
+            // 将 `this.add()`映射为`this.$store.commit('increment')`
+            add: 'increment'
+        })
+    }
+}
+```
+
+在`mutation`中混合异步调用会导致你的程序很难调试，例如当你调用了两个包含异步回调的`mutation`来改变状态，你怎么知道哪个时候回调和哪个先回调呢，这就是为什么Vuex要区分`mutation`和`action`两个概念。在Vuex中，`mutation`都是同步事务
+
+```js
+store.commit('increment') // 任何由 "increment" 导致的状态变更都应该在此刻完成。
+```
+
+## 处理异步操作的 Action
+
+Action 类似于 Mutation ，不同点在于：
+
+* Action 提交的是 Mutation，而不是直接变更状态;而Mutation是直接提交一个状态变更
+* Action 可以包含任意操作
+
+首先来注册一个简单的 action ：
+
+```js
+const store = new Vuex.Store({
+    state: {
+        count: 0
+    },
+    mutations: {
+        increment (state) {
+            state.count++
+        }
+    },
+    actions: {
+        increment (context) {
+            context.commit('increment')
+        }
+    }
+})
+```
+
+Action 函数接受一个与 store 实例具有相同方法和属性的 context 对象，因此开发者可以用 `context.commit()` 来提交一个 mutation ,或者通过`context.state`和`context.getter`来获取 state 和 getters。学习 Modules 时我们就能知道，为什么`context`对象不是`store`实例本身了
+
+实践中，我们会经常用到ES2015的参数解构来简化代码，特别是我们需要多次调用`commit`的时候
+
+```js
+const store = new Vuex.Store({
+    //...
+    actions: {
+        increment({commit}) {
+            // {commit} = context
+            commit('increment')
+        }
+    }
+})
+```
+
+## 分发Action
+
+Action 通过 `store.dispatch`方法触发。
+
+```js
+store.dispatch('increment') // 分发一个名为`increment`的action
+```
+
+一眼看上去可能多此一举，我们直接分发mutation岂不是更方便，实际上并非如此，还记得`mutation`内必须执行同步操作这个限制吗，Action就不受约束。我们可以在`action`内执行异步操作
+
+```js
+const store = new Vuex.Store({
+    //...
+    action: {
+        incrementAsync({commit}) {
+            setTimeout(() => {
+                commit('increment')
+            },1000)
+        }
+    }
+})
+// 分发一个名为`incrementAsync`的action，执行后会在1秒后提交一个名为`increment`的mutation
+store.dispatch('incrementAsync')
+
+// action支持载荷和对象风格传入
+store.dispatch('incrementAsync',{
+    amount: 10
+})
+//action支持对象风格传入
+store.dispatch({
+    type: 'incrementAsync',
+    amount: 10
+})
+```
+
+参看一个购物车实例，涉及到调用异步 API 和多重分发`mutation`:
+
+```js
+const store = new Vuex.Store({
+    //...
+    actions: {
+        checkout({commit,state},products) {
+            // 把当前购物车的信息备份起来
+            const savedCartItems = [...state.cart.added]
+            // 发出结账请求，然后乐观的清空购物车
+            commit(types.CHECKOUT_REQUEST)
+            // 购物车 API 接受一个成功回调和一个失败回调
+            shop.buyProducts(
+                products,
+                // 成功操作
+                () => commit(types.CHECKOUT_SUCCESS),
+                () => commit(types.CHECKOUT_FAILURE,savedCartItem)
+            )
+        }
+    }
+})
+```
+
+在以上代码中，我们正在进行一系列的异步操作，并且通过提交`mutation`来记录`action`产生的副作用--即状态变更
+
+## 在组件中分发 Action
+
+开发者在组件中使用`this.$store.dispatch('xxx')`分发action，或者使用辅助函数`mapActions`将组件中的methods映射为`this.$store.dispatch()`调用(需要先在根节点注入`store`)
+
+```js
+import {mapActions} form 'vuex'
+
+export default {
+    // ...
+    methods: {
+        ...mapActions([
+            // this.increment -> this.$store.dispatch('increment')
+            'increment'
+            // 支持载荷 this.incrementBy(amount) => this.$store.dispatch('incrementBy',amount)
+            'incrementBy'
+        ]),
+        ...mapActions({
+            // this.add() => this.$store.dispatch('increment')
+            add: 'increment'
+        })
+    }
+}
+```
+
+## 组合Action
+
+Action通常是异步的，那我们怎么知道action什么时候结束呢？更重要的是，我们如何才能组合多个action，用来处理更加复杂的流程呢？
+
+首先，我们需要明白，`store.dispatch`可以处理被触发的`action`的处理函数返回的`Promise`，并且`store.dispatch`仍旧返回`Promise`
+
+```js
+actions: {
+    actionA({commit}) {
+        return new Promise((resolve,reject) => {
+            setTimeout(() => {
+                commit('someMutation')
+                resolve()
+            },1000)
+        })
+    }
+}
+```
+
+这样定义action后，现在我们可以这样分发：
+
+```js
+store.dispatch('actionA').then(() => {
+    // code
+})
+```
+
+同时，我们还可以在另外一个action中这样写：
+
+```js
+actions: {
+    // ...
+    actionB({dispatch,commit}) {
+        return dispatch('actionA').then(() => {
+            commit('someOtherMutation')
+        })
+    }
+}
+```
+
+最后，如果我们使用`async/await`语法，我们可以这样组合：
+
+```js
+// 假设 getData() 和 getOtherData() 返回的是 Promise
+actions: {
+    async actionA({commit}) {
+        commit('gotData',await getData())
+    },
+    async actionB({dispatch,commit}) {
+        await dispatch('actionA') // 等待 actionA 完成
+        commit('gotOtherData',await getOtherData)
+    }
+}
+```
+
+一个`store.dispatch`可以在不同模块中触发多个action函数，在这种情况下，只有当所有的触发函数完成后，返回的 Promise 才被执行
+
+## Module
+
+由于使用单一状态树，应用的所有状态会集中到一个比较大的对象，当应用变得复杂是时，`store`对象就可能变得十分臃肿
+
+为了解决以上问题，Vuex允许开发者将`store`对象分割成模块，每个模块拥有自己的`state`、`getters`、`mutations`、`actions`，甚至是嵌套子模块--从上至下进行同样方式的分割
+
+```js
+const moduleA = {
+    state: {
+        //...
+    },
+    getters: {
+        //...
+    },
+    mutations: {
+        //...
+    },
+    actions: {
+        //...
+    }
+}
+const moduleB = {
+    state: {
+        //...
+    },
+    getters: {
+        //...
+    },
+    mutations: {
+        //...
+    },
+    actions: {
+        //...
+    }
+}
+const store = new Vuex.Store({
+    modules: {
+        a: moduleA,
+        b: moduleB
+    }
+})
+store.a.count // -> moduleA的状态
+store.b.count // -> moduleB的状态
+```
+
+## 模块的局部状态
+
+对于模块内部的`mutation`和`getter`，接受的第一个参数是模块的局部状态对象
+
+```js
+const moduleA = {
+    state: {
+        count: 1
+    },
+    getters: {
+        doubleCount(state) {
+            return state.count * 2
+        }
+    },
+    mutations: {
+        increment(state) {
+            // 这里的 `state` 对象是模块的局部状态
+            state.count++
+        }
+    }
+}
+```
